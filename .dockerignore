@@ -1,0 +1,13 @@
+.git
+__pycache__/
+*.pyc
+.pytest_cache/
+.prism_cache/
+runs/
+results/
+mteb_results/
+.hf_cache/
+*.log
+.venv/
+venv/
+docs/*.pdf

@@ -1,0 +1,27 @@
+{
+  "name": "submission",
+  "backend": {
+    "kind": "sentence_transformer",
+    "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+    "normalize": true,
+    "batch_size": 32,
+    "device": "cpu",
+    "max_seq_length": 256
+  },
+  "query": {
+    "normalize": true,
+    "extract_keywords": true,
+    "classify_type": true,
+    "hyde_enabled": true,
+    "hyde_weight": 0.5
+  },
+  "snippet": {
+    "normalize": true,
+    "multiview_enabled": true,
+    "view_weights": { "raw": 1.0, "ast": 0.6, "identifiers": 0.4 },
+    "max_chars": 4000,
+    "chunk_overlap": 200
+  },
+  "scoring": { "hybrid_enabled": false, "fusion": "rrf", "dense_weight": 1.0, "sparse_weight": 0.5 },
+  "versioning": { "enabled": true, "delta_weight": 0.5, "reference": "first" }
+}

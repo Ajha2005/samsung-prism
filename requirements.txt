@@ -1,0 +1,8 @@
+# Core runtime dependencies — enough to run the pipeline, the demo, the
+# ablations, and the full test suite with the offline (deterministic) backend.
+# No network or model download required for these.
+numpy==2.4.6
+rank-bm25==0.2.2
+
+# Optional: only needed to load YAML configs (.json configs work without it).
+# pyyaml==6.0.2

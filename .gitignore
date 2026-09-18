@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# Caches / indexes / model downloads
+.cache/
+.prism_cache/
+*.npz
+*.faiss
+models/
+~/.cache/huggingface
+
+# Eval / run artifacts (generated; keep the canonical submission JSON only)
+runs/
+results/
+!results/appsretrieval_results.json
+mteb_results/
+*.log
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Keep synthetic fixtures tracked; ignore large generated corpora
+data/generated/
