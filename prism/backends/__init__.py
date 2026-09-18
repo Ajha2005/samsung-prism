@@ -12,12 +12,21 @@ from prism.backends.hashing import HashingBackend
 __all__ = ["EmbeddingBackend", "HashingBackend", "build_backend"]
 
 
-def build_backend(config) -> EmbeddingBackend:
+def build_backend(config, *, strict: bool = False) -> EmbeddingBackend:
     """Instantiate the backend named by ``config.backend.kind``.
 
-    Falls back to the hashing backend (with a warning) if the sentence-transformer
-    stack or the model is unavailable, so a run never hard-fails on environment
-    issues — it degrades to a reproducible offline embedder instead.
+    When ``strict`` is False (the default — used by the demo, ablation, and the
+    standalone :class:`~prism.pipeline.CodeRetriever`), a failure to load the
+    sentence-transformer stack or model falls back to the deterministic hashing
+    backend with a loud warning, so offline/dev usage never hard-fails on an
+    environment issue.
+
+    When ``strict`` is True (used by :func:`prism.encoder.as_mteb_encoder`, i.e.
+    the actual leaderboard eval path), that fallback is disabled and the
+    original exception is re-raised instead. A leaderboard run must never
+    silently substitute a different backend than the one requested and report a
+    misleading score under the requested model's name — better to fail loudly
+    than to hand back a number nobody asked for.
     """
     from prism.config import PipelineConfig
 
@@ -41,6 +50,14 @@ def build_backend(config) -> EmbeddingBackend:
                 trust_remote_code=bc.trust_remote_code,
             )
         except Exception as exc:  # pragma: no cover - environment dependent
+            if strict:
+                raise RuntimeError(
+                    f"Could not load sentence-transformers model {bc.model_name!r} "
+                    f"({type(exc).__name__}: {exc}). Refusing to silently substitute "
+                    f"a different backend for a leaderboard eval — fix the model load "
+                    f"(missing dependency, trust_remote_code, network) and retry."
+                ) from exc
+
             import warnings
 
             warnings.warn(
