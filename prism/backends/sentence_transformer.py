@@ -27,6 +27,7 @@ class SentenceTransformerBackend:
         max_seq_length: Optional[int] = 256,
         query_prompt: Optional[str] = None,
         passage_prompt: Optional[str] = None,
+        trust_remote_code: bool = False,
     ):
         # Imported lazily so the rest of the package (and the offline backend)
         # works without torch/sentence-transformers installed.
@@ -38,7 +39,7 @@ class SentenceTransformerBackend:
         self.query_prompt = query_prompt
         self.passage_prompt = passage_prompt
 
-        self.model = SentenceTransformer(model_name, device=device)
+        self.model = SentenceTransformer(model_name, device=device, trust_remote_code=trust_remote_code)
         if max_seq_length:
             # Cap sequence length to keep CPU latency predictable.
             try:

@@ -1,0 +1,16 @@
+{
+  "name": "code-model-experiment",
+  "backend": {
+    "kind": "sentence_transformer",
+    "model_name": "jinaai/jina-embeddings-v2-base-code",
+    "normalize": true,
+    "batch_size": 16,
+    "device": "cpu",
+    "max_seq_length": null,
+    "trust_remote_code": true
+  },
+  "query": { "normalize": true, "extract_keywords": true, "classify_type": true, "hyde_enabled": false },
+  "snippet": { "normalize": true, "multiview_enabled": false },
+  "scoring": { "hybrid_enabled": false },
+  "versioning": { "enabled": false }
+}

@@ -4,13 +4,34 @@ import json
 
 import pytest
 
-from prism.config import PipelineConfig, QueryConfig, ScoringConfig, load_config
+from prism.config import BackendConfig, PipelineConfig, QueryConfig, ScoringConfig, load_config
 
 
 def test_defaults_valid():
     cfg = PipelineConfig()
     assert cfg.name == "baseline"
     assert cfg.backend.kind == "sentence_transformer"
+    assert cfg.backend.trust_remote_code is False
+
+
+def test_trust_remote_code_roundtrips_from_dict():
+    cfg = load_config(
+        {
+            "name": "code-model",
+            "backend": {
+                "kind": "sentence_transformer",
+                "model_name": "jinaai/jina-embeddings-v2-base-code",
+                "max_seq_length": None,
+                "trust_remote_code": True,
+            },
+        }
+    )
+    assert cfg.backend.trust_remote_code is True
+    assert cfg.backend.max_seq_length is None
+
+
+def test_backend_config_defaults_trust_remote_code_false():
+    assert BackendConfig().trust_remote_code is False
 
 
 def test_from_dict_nested():

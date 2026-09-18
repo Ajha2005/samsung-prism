@@ -38,6 +38,7 @@ def build_backend(config) -> EmbeddingBackend:
                 max_seq_length=bc.max_seq_length,
                 query_prompt=bc.query_prompt,
                 passage_prompt=bc.passage_prompt,
+                trust_remote_code=bc.trust_remote_code,
             )
         except Exception as exc:  # pragma: no cover - environment dependent
             import warnings

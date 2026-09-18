@@ -41,12 +41,20 @@ class BackendConfig:
     normalize: bool = True
     batch_size: int = 32
     device: str = "cpu"
+    # None leaves the model's own native max sequence length untouched — use
+    # this for long-context models (e.g. code-specialized models with 2k-8k
+    # native context) instead of clipping them down to the 256 default, which
+    # is sized for small general models like all-MiniLM-L6-v2.
     max_seq_length: Optional[int] = 256
     # Dimensionality used by the hashing fallback backend.
     hashing_dim: int = 1024
     # Optional instruction prefixes some models expect (e.g. bge/e5 style).
     query_prompt: Optional[str] = None
     passage_prompt: Optional[str] = None
+    # Some code-specialized models (e.g. jina-embeddings-v2-base-code) ship a
+    # custom modeling class and require this to load via sentence-transformers.
+    # Only set true for models you trust — it executes code from the model repo.
+    trust_remote_code: bool = False
 
     def validate(self) -> None:
         if self.kind not in {"sentence_transformer", "hashing"}:
