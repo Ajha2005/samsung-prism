@@ -70,18 +70,27 @@ NDCG@10 / MRR plus the full MTEB result and the exact config that produced it).
 `all-MiniLM-L6-v2` is a small *general-purpose* model with a 256-token cap — real
 AppsRetrieval queries/solutions often run longer, and it has never seen code
 during training, so treat its score as a floor, not a ceiling. `config/code_model.json`
-swaps in a code-specialized, long-context model instead (`max_seq_length: null`
-keeps the model's own native context rather than clipping it to 256):
+swaps in `flax-sentence-embeddings/st-codesearch-distilroberta-base`, a model
+fine-tuned specifically for code search, with a longer 512-token window:
 
 ```bash
 python -m prism.cli eval --config config/code_model.json \
     --output results/appsretrieval_results.json
 ```
 
-Some code-specialized models ship custom modeling code and need
-`trust_remote_code` to load — `config/code_model.json` sets it, or pass
-`--trust-remote-code` on the CLI. Only enable it for a model repo you trust,
-since it executes code from that repo.
+Some code-specialized models (e.g. Jina's code embedding models) ship custom
+modeling code fetched from the Hub at load time and need `trust_remote_code`
+to load — set it in the config or pass `--trust-remote-code` on the CLI, and
+only for a model repo you trust, since it executes code from that repo. Treat
+it as a last resort: that custom code is pinned to whatever `transformers`
+internals existed when it was written, so it can break on a newer
+`transformers` release with an `ImportError` from deep inside the library
+(this happened with `jina-embeddings-v2-base-code` during this build, which is
+why `config/code_model.json` no longer uses it). **A leaderboard eval never
+silently substitutes a different backend when the requested model fails to
+load — it raises instead**, so an eval that reports a score always used the
+model you asked for; the demo/ablation commands still degrade gracefully to
+the offline backend on a load failure, since those aren't scoring anything.
 
 ### Docker (one command, reproducible)
 

@@ -38,9 +38,15 @@ class PrePostPipelineEncoder:
         :func:`as_mteb_encoder`, so importing this module never requires mteb.
     """
 
-    def __init__(self, config: Optional[PipelineConfig] = None, backend: Optional[EmbeddingBackend] = None):
+    def __init__(
+        self,
+        config: Optional[PipelineConfig] = None,
+        backend: Optional[EmbeddingBackend] = None,
+        *,
+        strict: bool = False,
+    ):
         self.config = load_config(config)
-        self.backend = backend or build_backend(self.config)
+        self.backend = backend or build_backend(self.config, strict=strict)
         self.dim = self.backend.dim
         self._sketcher = (
             build_sketcher(self.config.query.hyde_cache_path)
@@ -169,7 +175,10 @@ def as_mteb_encoder(config: Optional[PipelineConfig] = None, *, name: str = "pri
 
     class _MTEBPrePostEncoder(AbsEncoder, PrePostPipelineEncoder):
         def __init__(self, cfg):
-            PrePostPipelineEncoder.__init__(self, cfg)
+            # strict=True: this is the leaderboard eval path. If the requested
+            # model can't load, fail loudly rather than silently score under
+            # the wrong (hashing) backend and report a misleading number.
+            PrePostPipelineEncoder.__init__(self, cfg, strict=True)
             self.mteb_model_meta = ModelMeta.create_empty(
                 overwrites=dict(name=name, revision=self.config.backend.model_name, loader=type(self))
             )

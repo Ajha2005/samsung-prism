@@ -2,12 +2,12 @@
   "name": "code-model-experiment",
   "backend": {
     "kind": "sentence_transformer",
-    "model_name": "jinaai/jina-embeddings-v2-base-code",
+    "model_name": "flax-sentence-embeddings/st-codesearch-distilroberta-base",
     "normalize": true,
-    "batch_size": 16,
+    "batch_size": 32,
     "device": "cpu",
-    "max_seq_length": null,
-    "trust_remote_code": true
+    "max_seq_length": 512,
+    "trust_remote_code": false
   },
   "query": { "normalize": true, "extract_keywords": true, "classify_type": true, "hyde_enabled": false },
   "snippet": { "normalize": true, "multiview_enabled": false },
