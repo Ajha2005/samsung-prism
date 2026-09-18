@@ -67,6 +67,22 @@ python -m prism.cli eval --config config/submission.json \
 `results/appsretrieval_results.json` is the leaderboard artifact (it carries the
 NDCG@10 / MRR plus the full MTEB result and the exact config that produced it).
 
+`all-MiniLM-L6-v2` is a small *general-purpose* model with a 256-token cap — real
+AppsRetrieval queries/solutions often run longer, and it has never seen code
+during training, so treat its score as a floor, not a ceiling. `config/code_model.json`
+swaps in a code-specialized, long-context model instead (`max_seq_length: null`
+keeps the model's own native context rather than clipping it to 256):
+
+```bash
+python -m prism.cli eval --config config/code_model.json \
+    --output results/appsretrieval_results.json
+```
+
+Some code-specialized models ship custom modeling code and need
+`trust_remote_code` to load — `config/code_model.json` sets it, or pass
+`--trust-remote-code` on the CLI. Only enable it for a model repo you trust,
+since it executes code from that repo.
+
 ### Docker (one command, reproducible)
 
 ```bash

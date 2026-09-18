@@ -26,7 +26,12 @@ from prism.config import (
 
 
 def _backend_config(args) -> BackendConfig:
-    return BackendConfig(kind=args.backend, model_name=args.model, hashing_dim=args.hashing_dim)
+    return BackendConfig(
+        kind=args.backend,
+        model_name=args.model,
+        hashing_dim=args.hashing_dim,
+        trust_remote_code=getattr(args, "trust_remote_code", False),
+    )
 
 
 def _build_config(args, name: str) -> PipelineConfig:
@@ -45,6 +50,12 @@ def _add_common_backend_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--backend", choices=["sentence_transformer", "hashing"], default="sentence_transformer")
     p.add_argument("--model", default="sentence-transformers/all-MiniLM-L6-v2")
     p.add_argument("--hashing-dim", type=int, default=2048, dest="hashing_dim")
+    p.add_argument(
+        "--trust-remote-code",
+        action="store_true",
+        dest="trust_remote_code",
+        help="Allow loading models that ship custom modeling code (needed by some code-specialized models).",
+    )
     p.add_argument("--config", default=None, help="Path to a JSON/YAML pipeline config (overrides flags).")
 
 
