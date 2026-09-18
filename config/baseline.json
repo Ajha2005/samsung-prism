@@ -1,0 +1,15 @@
+{
+  "name": "baseline",
+  "backend": {
+    "kind": "sentence_transformer",
+    "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+    "normalize": true,
+    "batch_size": 32,
+    "device": "cpu",
+    "max_seq_length": 256
+  },
+  "query": { "normalize": true, "extract_keywords": true, "classify_type": true, "hyde_enabled": false },
+  "snippet": { "normalize": true, "multiview_enabled": false },
+  "scoring": { "hybrid_enabled": false },
+  "versioning": { "enabled": false }
+}

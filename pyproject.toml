@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "prism-code-search"
+version = "1.0.0"
+description = "Agentic Code Intelligence: a CPU-friendly code-retrieval pipeline for the PRISM GenAI Hackathon (Theme 1)."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "PRISM Theme 1 Submission" }]
+keywords = ["code-retrieval", "embeddings", "mteb", "hyde", "multi-view", "information-retrieval"]
+
+# Runtime dependencies are declared here for `pip install .`.
+# Exact pins for reproducible eval live in requirements.txt (see README).
+dependencies = [
+    "numpy>=1.24",
+    "rank-bm25>=0.2.2",  # sparse signal for hybrid scoring
+]
+
+[project.optional-dependencies]
+# The competition backend + scorer. Installed for the real leaderboard run.
+# (These pull torch/transformers and download models from HuggingFace at runtime.)
+eval = [
+    "mteb>=2.0.0",
+    "sentence-transformers>=2.7.0",
+]
+yaml = ["pyyaml>=6.0"]  # only needed to load .yaml configs (.json works without it)
+dev = [
+    "pytest>=7.4",
+]
+
+[project.scripts]
+prism-eval = "prism.cli:eval_main"
+prism-demo = "prism.cli:demo_main"
+prism-ablation = "prism.cli:ablation_main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["prism*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

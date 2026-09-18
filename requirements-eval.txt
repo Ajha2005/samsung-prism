@@ -1,0 +1,20 @@
+# Leaderboard / competition dependencies — the real embedding backend and the
+# MTEB scorer. Installing these pulls torch (CPU), transformers, and datasets,
+# and the first eval run downloads the model + the CoIR AppsRetrieval dataset
+# from HuggingFace.
+#
+#   pip install -r requirements.txt -r requirements-eval.txt
+#
+# Versions pinned to those verified for this build.
+-r requirements.txt
+
+mteb==2.21.0
+sentence-transformers==6.0.1
+transformers==5.17.0
+datasets==5.0.1
+huggingface-hub==1.32.0
+
+# torch is a transitive dependency of sentence-transformers. Pinned for
+# reproducibility; install the CPU build to keep it small, e.g.:
+#   pip install torch==2.14.0 --index-url https://download.pytorch.org/whl/cpu
+torch==2.14.0
