@@ -55,17 +55,21 @@ CI, and graceful degradation. It is **not** the competition model — it exists 
 pip install -r requirements.txt -r requirements-eval.txt   # + mteb, sentence-transformers, torch(CPU)
 pip install -e .
 
-# Baseline on the board:
-python -m prism.cli eval --model sentence-transformers/all-MiniLM-L6-v2 \
-    --output results/appsretrieval_results.json
-
-# With the differentiators:
-python -m prism.cli eval --config config/submission.json \
+python -m prism.cli eval --config config/baseline.json \
     --output results/appsretrieval_results.json
 ```
 
 `results/appsretrieval_results.json` is the leaderboard artifact (it carries the
 NDCG@10 / MRR plus the full MTEB result and the exact config that produced it).
+
+**Why baseline, not `config/submission.json`:** we measured both — see
+`docs/ablation_log.md` for the full ablation. On the real AppsRetrieval split,
+plain `all-MiniLM-L6-v2` (NDCG@10 = **0.0662**) beat both HyDE (0.0625) and
+multi-view (0.0515); `config/submission.json` (both stacked) scored lower
+still. Per this repo's own rule — keep only what wins — baseline is what's
+submitted. Both differentiators remain implemented and independently
+verified; they're worth re-measuring against a code-specialized backend
+(`config/code_model.json`) where the bet they make is more likely to pay off.
 
 `all-MiniLM-L6-v2` is a small *general-purpose* model with a 256-token cap — real
 AppsRetrieval queries/solutions often run longer, and it has never seen code
@@ -159,7 +163,10 @@ synthetic set — the real numbers come from `--apps`):
 
 (That `hybrid` row dropping is the methodology working as intended — measure,
 keep what wins, revert what doesn't. The real decision is remade on
-`AppsRetrieval`.)
+`AppsRetrieval`, and it reversed two of these: **on the real split, both
+`+multiview` and `+hyde` lose to baseline** — see `docs/ablation_log.md` for
+the real numbers and why. This offline table is kept here to show the harness
+working, not as a preview of the real verdict.)
 
 ---
 
@@ -197,6 +204,11 @@ Dockerfile, Makefile, requirements*.txt
 
 ## Limitations (honest scope)
 
+- **HyDE and multi-view underperform plain baseline on `all-MiniLM-L6-v2`**, measured
+  directly on real AppsRetrieval (see `docs/ablation_log.md`) — both bet on a
+  capability (code structure awareness, LLM-quality query translation) this small
+  general-purpose model doesn't have. Baseline is what's submitted; both remain
+  implemented and worth re-measuring against a code-specialized backend.
 - The evolutionary bonus is a measurable **prototype**. Its version-discrimination
   gain is realized with the semantic backend; on the lexical fallback it holds
   parity with naive. The cheap-rebuild P1 requirement is fully working.

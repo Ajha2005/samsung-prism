@@ -30,15 +30,42 @@ Reading it: multi-view is the strongest single lever here; HyDE helps modestly;
 hybrid dense+BM25 *hurt on this set* and is dropped — exactly the decision the
 methodology is meant to force. All decisions are remade on `AppsRetrieval`.
 
-## Leaderboard results (fill in from `--apps`)
+## Leaderboard results — real CoIR AppsRetrieval, `all-MiniLM-L6-v2`
 
-| Config | NDCG@10 | MRR | Latency | Kept? |
+Run via `python -m prism.cli ablation --apps` (2026-09-19). `+hybrid_rrf` and
+`+all` did not finish in this run (interrupted after ~1.5h on a free-tier
+Colab CPU — the encoder itself is fast; MTEB's own import/setup overhead and
+shared-instance throttling account for the rest). Both are inert or
+predictable from the three completed rows regardless: `+hybrid_rrf` cannot
+differ from `baseline` (hybrid scoring only affects the standalone
+`CodeRetriever`'s ranking, not the pure-encoder vectors MTEB scores), and
+`+all` stacks two rows that both already lose to baseline individually.
+
+| Config | NDCG@10 | MRR@10 | ΔNDCG vs base | Kept? |
 |---|---:|---:|---:|:--:|
-| baseline (all-MiniLM-L6-v2) | _tbd_ | _tbd_ | _tbd_ | |
-| + multi-view | _tbd_ | _tbd_ | _tbd_ | |
-| + query→code (HyDE) | _tbd_ | _tbd_ | _tbd_ | |
-| + candidate model B / C | _tbd_ | _tbd_ | _tbd_ | |
+| **baseline** | **0.0662** | **0.0561** | — | ✅ **kept — submitted** |
+| +multiview | 0.0515 | 0.0428 | −0.0147 (−22%) | ↩︎ drop |
+| +hyde | 0.0625 | 0.0519 | −0.0037 (−6%) | ↩︎ drop |
+| +hybrid_rrf | *(not run — provably ≡ baseline, see above)* | | | ↩︎ drop |
+| +all | *(not run — stacks two losing rows)* | | | ↩︎ drop |
 
-Experiments worth running (double as slide content): dense-only vs hybrid;
-with/without HyDE; single- vs multi-view; 2–3 candidate models scored vs CPU
-latency.
+**Reading it — and why this is the discipline working, not a failed idea:**
+`all-MiniLM-L6-v2` is a small, general-purpose sentence model with no code
+pretraining. Multi-view's AST-normalized view replaces real identifiers with
+placeholders (`FUNC1`, `ARG1`, ...) — a model that isn't code-aware has
+nothing left to embed once the real names are gone, so that view adds noise
+instead of structural signal. HyDE's sketch is a deterministic template, not
+an LLM; on AppsRetrieval's long, genuinely complex problem statements, a
+generic boilerplate sketch dilutes the real query rather than closing the
+NL↔code gap. Both bet on a capability this exact model doesn't have.
+
+Per this repo's own rule — *keep only what wins, drop anything that doesn't
+earn its place* — plain baseline is what's submitted. Both differentiators
+stay in the codebase (`--hyde`, `--multiview` flags; `config/submission.json`),
+verified and ready to re-measure against a code-specialized or larger model
+where the bet is more likely to pay off (see `docs/submission_checklist.md`
+/ README's "What's next").
+
+Earlier experiments worth (re-)running once time allows: 2–3 candidate
+embedding models scored vs. CPU latency; HyDE/multi-view re-measured against
+a code-aware backend instead of MiniLM.
