@@ -79,16 +79,60 @@ def run_task(
     return {"scores": scores, "result": result_dict}
 
 
+def write_result_files(
+    outcome: Dict[str, Any],
+    config: PipelineConfig,
+    output_path: str,
+    *,
+    write_debug_sidecar: bool = True,
+) -> Dict[str, Any]:
+    """Write the submission artifact (+ optional debug sidecar) from an outcome.
+
+    ``output_path`` gets EXACTLY ``outcome["result"]`` (== ``task_result.to_dict()``,
+    the same object the problem statement's own reference snippet writes out via
+    ``json.dump(task_result.to_dict(), f, indent=2)``) — no wrapper, no added
+    keys, so it matches whatever the screening pipeline parses byte-for-byte.
+
+    A separate ``<output_path minus .json>.debug.json`` sidecar (on by default)
+    carries our own config + flattened scores, for local comparison/ablation
+    convenience only — never upload the sidecar as the submission artifact.
+
+    Split out from :func:`run_apps_retrieval` so this file-format contract is
+    unit-testable without a live MTEB/HuggingFace run.
+    """
+    out = Path(output_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(outcome["result"], indent=2, default=str), encoding="utf-8")
+
+    payload = {
+        "task": "AppsRetrieval",
+        "split": "test",
+        "config": config.to_dict(),
+        "config_signature": config.describe(),
+        "main_score_ndcg_at_10": outcome["scores"].get("ndcg_at_10"),
+        "mrr_at_10": outcome["scores"].get("mrr_at_10"),
+        "scores": outcome["scores"],
+        "submission_file": str(out),
+    }
+    if write_debug_sidecar:
+        debug_path = out.parent / f"{out.stem}.debug.json"
+        debug_path.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
+        payload["debug_file"] = str(debug_path)
+    return payload
+
+
 def run_apps_retrieval(
     config: Optional[PipelineConfig] = None,
     *,
     output_path: str = "results/appsretrieval_results.json",
     encode_kwargs: Optional[dict] = None,
+    write_debug_sidecar: bool = True,
 ) -> Dict[str, Any]:
     """Run the real CoIR AppsRetrieval eval and write the submission JSON.
 
     Requires network access to download the dataset + model from HuggingFace
-    (the judges' environment). The written JSON is the leaderboard artifact.
+    (the judges' environment). See :func:`write_result_files` for the exact
+    output file contract.
     """
     import mteb
 
@@ -99,18 +143,4 @@ def run_apps_retrieval(
     task = mteb.get_task("AppsRetrieval")
 
     outcome = run_task(encoder, task, encode_kwargs=encode_kwargs, split="test")
-
-    payload = {
-        "task": "AppsRetrieval",
-        "split": "test",
-        "config": config.to_dict(),
-        "config_signature": config.describe(),
-        "main_score_ndcg_at_10": outcome["scores"].get("ndcg_at_10"),
-        "mrr_at_10": outcome["scores"].get("mrr_at_10"),
-        "scores": outcome["scores"],
-        "mteb_result": outcome["result"],
-    }
-    out = Path(output_path)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
-    return payload
+    return write_result_files(outcome, config, output_path, write_debug_sidecar=write_debug_sidecar)

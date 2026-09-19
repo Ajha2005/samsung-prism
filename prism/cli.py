@@ -79,7 +79,9 @@ def eval_main(argv: Optional[List[str]] = None) -> int:
     payload = run_apps_retrieval(config, output_path=args.output)
     print(f"[prism-eval] NDCG@10 = {payload.get('main_score_ndcg_at_10')}")
     print(f"[prism-eval] MRR@10  = {payload.get('mrr_at_10')}")
-    print(f"[prism-eval] wrote {args.output}")
+    print(f"[prism-eval] wrote {args.output}  <- upload THIS one (raw task_result.to_dict(), matches the problem statement's own reference snippet exactly)")
+    if payload.get("debug_file"):
+        print(f"[prism-eval] wrote {payload['debug_file']}  (local convenience only, not for submission)")
     return 0
 
 
