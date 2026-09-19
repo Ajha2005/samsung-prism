@@ -66,6 +66,27 @@ verified and ready to re-measure against a code-specialized or larger model
 where the bet is more likely to pay off (see `docs/submission_checklist.md`
 / README's "What's next").
 
-Earlier experiments worth (re-)running once time allows: 2–3 candidate
-embedding models scored vs. CPU latency; HyDE/multi-view re-measured against
-a code-aware backend instead of MiniLM.
+## Candidate model swap — also tested, also lost
+
+| Config | Model | NDCG@10 | MRR@10 | ΔNDCG vs base | Kept? |
+|---|---|---:|---:|---:|:--:|
+| **baseline** | all-MiniLM-L6-v2 | **0.0662** | **0.0561** | — | ✅ **kept — submitted** |
+| retrieval-tuned | multi-qa-MiniLM-L6-cos-v1 | 0.0484 | 0.0402 | −0.0178 (−27%) | ↩︎ drop |
+
+`multi-qa-MiniLM-L6-cos-v1` is pretrained on an asymmetric query→passage
+retrieval objective — a closer match to this task's *shape* than baseline's
+general sentence-similarity objective — but its training data is pure
+natural-language QA pairs (questions against NL answer passages), not code.
+The result: specializing further toward NL-passage retrieval moved it
+*away* from anything code-shaped, underperforming even a model that was
+never tuned for retrieval at all. This sharpens the diagnosis — the
+bottleneck here is code-awareness specifically, not retrieval-tuning in
+general — and rules out "just pick a retrieval-tuned model" as a shortcut.
+
+**Four real experiments on the actual leaderboard split now, all pointing
+the same direction:** multi-view, HyDE, and a retrieval-tuned model swap
+each underperformed plain baseline. Baseline (0.0662 / 0.0561) is submitted
+with high confidence it's the strongest configuration reachable within a
+CPU-only, small-model budget without a genuinely code-pretrained backend —
+the concrete next step for anyone continuing this work (see README's
+"What's next").
