@@ -1,0 +1,16 @@
+{
+  "name": "retrieval-tuned-model",
+  "backend": {
+    "kind": "sentence_transformer",
+    "model_name": "sentence-transformers/multi-qa-MiniLM-L6-cos-v1",
+    "normalize": true,
+    "batch_size": 32,
+    "device": "cpu",
+    "max_seq_length": 512,
+    "trust_remote_code": false
+  },
+  "query": { "normalize": true, "extract_keywords": true, "classify_type": true, "hyde_enabled": false },
+  "snippet": { "normalize": true, "multiview_enabled": false },
+  "scoring": { "hybrid_enabled": false },
+  "versioning": { "enabled": false }
+}
