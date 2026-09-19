@@ -23,9 +23,14 @@
       commit — the tagged commit is what gets judged.
 - [ ] MTEB results JSON (`appsretrieval_results.json`) uploaded as a **release
       artifact**. Generate it with:
-      `python -m prism.cli eval --config config/submission.json --output results/appsretrieval_results.json`
+      `python -m prism.cli eval --config config/baseline.json --output results/appsretrieval_results.json`
       *(needs network for the model + CoIR dataset; run in an environment with
-      HuggingFace access).*
+      HuggingFace access.)* **Use `config/baseline.json`, not `config/submission.json`**
+      — the real ablation (`docs/ablation_log.md`) showed baseline beats every
+      differentiator tried; baseline is what's actually submitted.
+      The written file is verified to be exactly `task_result.to_dict()` (no
+      wrapper) — matching the problem statement's own reference snippet
+      byte-for-byte, so it parses however the screening pipeline expects.
 - [ ] Everything referenced (PPT, demo video, docs) present in the tagged commit.
 - [ ] PPT / PDF named `CollegeName_TeamName_Submission_ppt` covering: theme ID,
       project title, team details, problem statement in your own words, solution +
@@ -39,16 +44,23 @@
 
 ## What this repo already provides
 - Reproducible pipeline + MTEB wiring verified end-to-end (offline synthetic task
-  + trec_eval-matching metrics).
-- Baseline + three differentiators, each measurable via the ablation harness.
+  + trec_eval-matching metrics), **and the submission file format independently
+  verified against the problem statement's own reference snippet.**
+- Real leaderboard results, not just offline estimates: baseline (NDCG@10 =
+  **0.0662**, MRR@10 = **0.0561**) measured against three real differentiators
+  — multi-view, HyDE, and a retrieval-tuned model swap — all on the actual
+  CoIR AppsRetrieval test split. All three underperformed; baseline is
+  submitted. Full reasoning in `docs/ablation_log.md`.
 - P1 cheap versioned rebuild (working) + evolutionary-retrieval prototype.
 - Operational telemetry (precision@k, recall, latency, index build/rebuild cost).
-- 55 offline tests; Docker image whose default run is tests + demo.
+- 70 offline tests; Docker image whose default run is tests + demo.
 
 ## Human still needs to
 1. Register / confirm registration on the Google Form.
-2. Run the leaderboard eval in a HuggingFace-reachable environment and attach
-   `appsretrieval_results.json` to the release.
+2. ~~Run the leaderboard eval~~ — done: baseline scored NDCG@10=0.0662,
+   MRR@10=0.0561 on the real split. Attach that `appsretrieval_results.json`
+   to the release (regenerate with `config/baseline.json` if the copy on hand
+   still has the old wrapped format — see the JSON-format note above).
 3. Create the release tag `PRISM_GENAI_HACKATHON_Y2026` on the final commit.
-4. Produce the PPT (`CollegeName_TeamName_Submission_ppt`) and the ≤5-min demo
-   video, and submit via the Google Form.
+4. Finish the PPT (title slide + closing contact info still need real team
+   details) and record the ≤5-min demo video, then submit via the Google Form.

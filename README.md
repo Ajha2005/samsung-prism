@@ -39,7 +39,7 @@ only if the scoreboard says so.
 ```bash
 pip install -r requirements.txt        # numpy + rank-bm25
 pip install -e .
-python -m pytest -q                    # 55 tests, all offline
+python -m pytest -q                    # 70 tests, all offline
 python -m prism.cli demo --backend hashing
 python -m prism.cli demo --backend hashing --versioned
 python -m prism.cli ablation --backend hashing
@@ -186,9 +186,10 @@ prism/
   eval/                 mteb_runner.py, synthetic_task.py (offline MTEB task)
   data.py               synthetic AppsRetrieval-like fixtures
   cli.py                prism-eval / prism-demo / prism-ablation
-config/                 baseline.json, submission.json
+config/                 baseline.json (submitted), submission.json, code_model.json,
+                        retrieval_tuned.json, multiview_trimmed.json — see docs/ablation_log.md
 scripts/                thin CLI wrappers
-tests/                  55 tests, offline; MTEB integration auto-skips if absent
+tests/                  70 tests, offline; MTEB integration auto-skips if absent
 docs/                   architecture.md, submission_checklist.md
 Dockerfile, Makefile, requirements*.txt
 ```
