@@ -64,18 +64,26 @@ NDCG@10 / MRR plus the full MTEB result and the exact config that produced it).
 
 **Why baseline, not `config/submission.json`:** we measured both — see
 `docs/ablation_log.md` for the full ablation. On the real AppsRetrieval split,
-plain `all-MiniLM-L6-v2` (NDCG@10 = **0.0662**) beat both HyDE (0.0625) and
-multi-view (0.0515); `config/submission.json` (both stacked) scored lower
-still. Per this repo's own rule — keep only what wins — baseline is what's
-submitted. Both differentiators remain implemented and independently
-verified; they're worth re-measuring against a code-specialized backend
-(`config/code_model.json`) where the bet they make is more likely to pay off.
+plain `all-MiniLM-L6-v2` (NDCG@10 = **0.0662**) beat every alternative we
+tried: HyDE (0.0625, −6%), front-loaded keywords (0.0646, −2.4%), multi-view
+(0.0515, −22%), a retrieval-tuned NL model (`multi-qa-MiniLM-L6-cos-v1`,
+0.0484, −27%), and a CodeSearchNet-pretrained code model
+(`st-codesearch-distilroberta-base`, 0.0333, −50%). `config/submission.json`
+(HyDE+multi-view stacked) scored lower still. Per this repo's own rule — keep
+only what wins — baseline is what's submitted. Every dropped feature stays
+implemented and independently verified.
 
 `all-MiniLM-L6-v2` is a small *general-purpose* model with a 256-token cap — real
 AppsRetrieval queries/solutions often run longer, and it has never seen code
-during training, so treat its score as a floor, not a ceiling. `config/code_model.json`
-swaps in `flax-sentence-embeddings/st-codesearch-distilroberta-base`, a model
-fine-tuned specifically for code search, with a longer 512-token window:
+during training, so treat its score as a floor, not a ceiling. We tried
+`config/code_model.json`, which swaps in
+`flax-sentence-embeddings/st-codesearch-distilroberta-base` (fine-tuned for
+code search with a 512-token window), and it lost by 50% — that model is
+Java/JS/PHP/Go/Ruby-weighted from CodeSearchNet and was distilled for
+docstring↔function retrieval, not Python problem-statement↔solution
+retrieval. So "code-aware" alone isn't the axis: the config remains for
+anyone who wants to re-run it, but the actual next-step is a Python-heavy
+NL↔code-pretrained backend.
 
 ```bash
 python -m prism.cli eval --config config/code_model.json \
@@ -205,11 +213,13 @@ Dockerfile, Makefile, requirements*.txt
 
 ## Limitations (honest scope)
 
-- **HyDE and multi-view underperform plain baseline on `all-MiniLM-L6-v2`**, measured
-  directly on real AppsRetrieval (see `docs/ablation_log.md`) — both bet on a
-  capability (code structure awareness, LLM-quality query translation) this small
-  general-purpose model doesn't have. Baseline is what's submitted; both remain
-  implemented and worth re-measuring against a code-specialized backend.
+- **Every non-baseline config underperforms plain baseline** on the real
+  AppsRetrieval split — HyDE, multi-view, keyword front-loading, a
+  retrieval-tuned NL model, and even a CodeSearchNet-pretrained code model
+  (see `docs/ablation_log.md`). The consistent bottleneck isn't any pipeline
+  trick; it's a base model that's actually pretrained on Python NL↔code
+  pairs. Baseline is what's submitted; every dropped feature stays
+  implemented for re-measurement against the right backbone.
 - The evolutionary bonus is a measurable **prototype**. Its version-discrimination
   gain is realized with the semantic backend; on the lexical fallback it holds
   parity with naive. The cheap-rebuild P1 requirement is fully working.

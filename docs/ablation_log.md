@@ -83,22 +83,39 @@ never tuned for retrieval at all. This sharpens the diagnosis — the
 bottleneck here is code-awareness specifically, not retrieval-tuning in
 general — and rules out "just pick a retrieval-tuned model" as a shortcut.
 
-**Four real experiments on the actual leaderboard split now, all pointing
-the same direction:** multi-view, HyDE, and a retrieval-tuned model swap
-each underperformed plain baseline. Baseline (0.0662 / 0.0561) is submitted
-with high confidence it's the strongest configuration reachable within a
-CPU-only, small-model budget without a genuinely code-pretrained backend —
+## Follow-up experiments — also measured on the real split, also lost
+
+Two more configs the earlier round had flagged as high-EV were re-run on
+CoIR AppsRetrieval (Kaggle, 2026-09-27), so every idea in this repo is now
+a measured row rather than a prediction:
+
+| Config | What it changes | NDCG@10 | MRR@10 | ΔNDCG vs base | Kept? |
+|---|---|---:|---:|---:|:--:|
+| **baseline** | all-MiniLM-L6-v2 | **0.0662** | **0.0561** | — | ✅ **kept — submitted** |
+| +frontload | Prepends extracted keywords in front of each query, so salient tokens survive MiniLM's 256-wordpiece cut on long problem statements. | 0.0646 | 0.0536 | −0.0016 (−2.4%) | ↩︎ drop |
+| code_model | Swaps in `flax-sentence-embeddings/st-codesearch-distilroberta-base`, an 82M model pretrained on CodeSearchNet (code + docstrings). | 0.0333 | 0.0264 | −0.0329 (−50%) | ↩︎ drop |
+
+**Reading the new rows:** front-loading barely moved the number — the loss
+is inside the noise band, meaning most AppsRetrieval queries already fit
+under the 256-wordpiece cap, so there was little for the trick to rescue.
+The code-model result was the interesting one: on paper the 82M
+CodeSearchNet-pretrained DistilRoBERTa is exactly the "code-aware backend"
+the earlier diagnosis called for, but it *lost by half* here. Two forces
+compound: (a) CodeSearchNet is heavily Java / JavaScript / PHP / Go / Ruby
+weighted, while AppsRetrieval is pure Python — the pretraining distribution
+doesn't align with the eval; (b) the model was distilled and trained for
+docstring↔function retrieval, not natural-language problem statements
+↔ full competitive-programming solutions, which is a much longer and
+messier query shape. So *"code-aware"* alone isn't the axis: we need
+**Python-heavy pretraining on NL-problem ↔ code-solution pairs**, not
+just any code-pretrained backbone. That's the sharpened next-step, and
+it's now in the README's "What's next".
+
+**Six real experiments on the actual leaderboard split now, all pointing
+the same direction:** multi-view, HyDE, front-loading, a retrieval-tuned
+NL model swap, and a code-pretrained model swap each underperformed plain
+baseline. Baseline (0.0662 / 0.0561) is submitted with high confidence
+it's the strongest configuration reachable within a CPU-only, small-model
+budget without a Python-heavy, NL-problem-aligned code-pretrained backend —
 the concrete next step for anyone continuing this work (see README's
 "What's next").
-
-## Queued experiments — implemented, not yet measured on the real split
-
-Two new configs are ready to A/B against baseline whenever there's another
-Colab run to spend. Both are safe by construction — the worst case is they
-match baseline (they don't change ranking on inputs that already fit) — so
-neither can regress the number below what's already submitted:
-
-| Config file | What it changes | Prediction |
-|---|---|---|
-| `config/frontload.json` | Prepends extracted keywords in front of each query, so the salient tokens survive MiniLM's 256-wordpiece cut when a problem statement is longer than that. | Should help on long-tail queries; ≈ 0 change on short ones. |
-| `config/code_model.json` | Swaps in `flax-sentence-embeddings/st-codesearch-distilroberta-base`, an 82M model pretrained on CodeSearchNet (code + docstrings) — the actual code-awareness the diagnosis above pointed at. | Highest-EV single change; slower encode (~4× MiniLM), no runtime risk otherwise. |
