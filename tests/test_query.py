@@ -6,6 +6,7 @@ from prism.query.preprocess import (
     analyze_query,
     classify_query,
     extract_keywords,
+    front_load_keywords,
     normalize_query,
 )
 
@@ -56,3 +57,41 @@ def test_template_sketch_is_codeish_and_deterministic():
 
 def test_sketcher_handles_empty_query():
     assert TemplateSketcher().sketch(analyze_query("")).startswith("def ")
+
+
+def test_front_load_puts_keywords_first_and_preserves_body():
+    q = "You are given an array. Compute the maximum contiguous subarray sum."
+    out = front_load_keywords(analyze_query(q), max_keywords=4)
+    # Preamble comes before the original text.
+    body_idx = out.find("You are given")
+    assert body_idx > 0
+    # A distinctive keyword ended up in the preamble.
+    preamble = out[:body_idx]
+    assert "subarray" in preamble.lower() or "contiguous" in preamble.lower()
+
+
+def test_front_load_preserves_full_body():
+    q = "Reverse a singly linked list in place using O(1) memory."
+    out = front_load_keywords(analyze_query(q), max_keywords=3)
+    # Nothing is dropped from the original text.
+    assert q in out
+
+
+def test_front_load_empty_query_is_empty():
+    assert front_load_keywords(analyze_query(""), max_keywords=5) == ""
+
+
+def test_front_load_zero_max_returns_original():
+    q = "Sort an array of integers ascending."
+    a = analyze_query(q)
+    assert front_load_keywords(a, max_keywords=0) == a.normalized
+
+
+def test_front_load_skips_keyword_already_at_start():
+    # 'sort' is already the first token; front-loading it again would be wasteful.
+    q = "sort the elements of a list into ascending order"
+    a = analyze_query(q)
+    out = front_load_keywords(a, max_keywords=6)
+    # 'sort' should not appear twice back-to-back at the very start.
+    assert not out.lower().startswith("sort, sort")
+    assert not out.lower().startswith("sort. sort")

@@ -6,6 +6,7 @@ from prism.query.preprocess import (
     analyze_query,
     classify_query,
     extract_keywords,
+    front_load_keywords,
     normalize_query,
 )
 
@@ -15,5 +16,6 @@ __all__ = [
     "analyze_query",
     "classify_query",
     "extract_keywords",
+    "front_load_keywords",
     "normalize_query",
 ]

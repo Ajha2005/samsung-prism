@@ -1,0 +1,23 @@
+{
+  "name": "baseline+frontload",
+  "backend": {
+    "kind": "sentence_transformer",
+    "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+    "normalize": true,
+    "batch_size": 32,
+    "device": "cpu",
+    "max_seq_length": 256,
+    "trust_remote_code": false
+  },
+  "query": {
+    "normalize": true,
+    "extract_keywords": true,
+    "classify_type": true,
+    "front_load_keywords": true,
+    "front_load_max": 6,
+    "hyde_enabled": false
+  },
+  "snippet": { "normalize": true, "multiview_enabled": false },
+  "scoring": { "hybrid_enabled": false },
+  "versioning": { "enabled": false }
+}

@@ -148,3 +148,37 @@ def analyze_query(text: str, *, normalize: bool = True, extract: bool = True, cl
         identifiers=identifiers,
         query_type=qtype,
     )
+
+
+def front_load_keywords(analysis: QueryAnalysis, *, max_keywords: int = 6) -> str:
+    """Prepend the most-salient keywords to the query text.
+
+    Why: sentence-transformers models cap sequence length at N wordpieces
+    (256 for MiniLM). A long competitive-programming problem statement can
+    exceed that, so the tokens the model actually sees are whatever came
+    first — usually intro fluff (\"You are given...\"), not the distinctive
+    keywords buried later.
+
+    Prepending the extracted keywords as a short comma-separated preamble
+    guarantees the salient signals survive truncation, without dropping any
+    original text. The base query is still present after the preamble, so
+    when it fits, nothing is lost.
+
+    Deterministic. LLM-free. Safe at eval time.
+    """
+    if not analysis or max_keywords <= 0 or not analysis.keywords:
+        return analysis.normalized if analysis else ""
+    # De-dupe against words already in the base text so we don't waste tokens.
+    base = analysis.normalized or analysis.raw or ""
+    base_lower = base.lower()
+    picks: List[str] = []
+    for kw in analysis.keywords:
+        if len(picks) >= max_keywords:
+            break
+        # Only prepend if it isn't the very first thing already.
+        if base_lower.startswith(kw.lower() + " ") or base_lower.startswith(kw.lower() + ","):
+            continue
+        picks.append(kw)
+    if not picks:
+        return base
+    return ", ".join(picks) + ". " + base

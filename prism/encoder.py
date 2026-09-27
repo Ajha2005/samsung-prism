@@ -23,7 +23,7 @@ from prism.backends import EmbeddingBackend, build_backend
 from prism.backends.base import l2_normalize
 from prism.config import PipelineConfig, load_config
 from prism.query.hyde import build_sketcher
-from prism.query.preprocess import QueryType, analyze_query
+from prism.query.preprocess import QueryType, analyze_query, front_load_keywords
 from prism.snippet.multiview import build_views
 from prism.snippet.preprocess import chunk_snippet, clean_snippet
 
@@ -65,6 +65,11 @@ class PrePostPipelineEncoder:
             classify=qcfg.classify_type,
         )
         query_text = analysis.normalized or text or ""
+        # Optional: front-load extracted keywords so a hard tokenizer cap
+        # (MiniLM's 256 wordpieces) still captures the salient signal on long
+        # AppsRetrieval problem statements.
+        if qcfg.front_load_keywords and qcfg.extract_keywords:
+            query_text = front_load_keywords(analysis, max_keywords=qcfg.front_load_max)
         if not (qcfg.hyde_enabled and self._sketcher is not None):
             return query_text, None, 0.0
 

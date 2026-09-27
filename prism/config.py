@@ -72,6 +72,13 @@ class QueryConfig:
     normalize: bool = True
     extract_keywords: bool = True
     classify_type: bool = True
+    # Front-load extracted keywords at the START of the query text before it
+    # hits the encoder, so a tokenizer with a hard length cap (MiniLM's 256
+    # wordpieces, e.g.) still sees the most-informative tokens even when the
+    # raw query is longer than that budget. Deterministic, no LLM, safe at
+    # eval time. Off by default so it's opt-in and measurable.
+    front_load_keywords: bool = False
+    front_load_max: int = 6  # keywords to prepend
     # Code-flavored HyDE: translate the NL query into a pseudo-code sketch and
     # embed code-against-code. ``hyde_weight`` blends the sketch embedding with
     # the raw-query embedding: 0.0 = pure query, 1.0 = pure sketch.
@@ -84,6 +91,8 @@ class QueryConfig:
     def validate(self) -> None:
         if not 0.0 <= self.hyde_weight <= 1.0:
             raise ValueError("hyde_weight must be in [0, 1]")
+        if self.front_load_max < 0:
+            raise ValueError("front_load_max must be non-negative")
 
 
 @dataclass
