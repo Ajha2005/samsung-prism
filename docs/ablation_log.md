@@ -90,3 +90,15 @@ with high confidence it's the strongest configuration reachable within a
 CPU-only, small-model budget without a genuinely code-pretrained backend —
 the concrete next step for anyone continuing this work (see README's
 "What's next").
+
+## Queued experiments — implemented, not yet measured on the real split
+
+Two new configs are ready to A/B against baseline whenever there's another
+Colab run to spend. Both are safe by construction — the worst case is they
+match baseline (they don't change ranking on inputs that already fit) — so
+neither can regress the number below what's already submitted:
+
+| Config file | What it changes | Prediction |
+|---|---|---|
+| `config/frontload.json` | Prepends extracted keywords in front of each query, so the salient tokens survive MiniLM's 256-wordpiece cut when a problem statement is longer than that. | Should help on long-tail queries; ≈ 0 change on short ones. |
+| `config/code_model.json` | Swaps in `flax-sentence-embeddings/st-codesearch-distilroberta-base`, an 82M model pretrained on CodeSearchNet (code + docstrings) — the actual code-awareness the diagnosis above pointed at. | Highest-EV single change; slower encode (~4× MiniLM), no runtime risk otherwise. |
