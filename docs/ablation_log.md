@@ -43,7 +43,7 @@ differ from `baseline` (hybrid scoring only affects the standalone
 
 | Config | NDCG@10 | MRR@10 | ΔNDCG vs base | Kept? |
 |---|---:|---:|---:|:--:|
-| **baseline** | **0.0662** | **0.0561** | — | ✅ **kept — submitted** |
+| **baseline** | **0.0662** | **0.0561** | — | ✅ kept → superseded by mpnet (final round) |
 | +multiview | 0.0515 | 0.0428 | −0.0147 (−22%) | ↩︎ drop |
 | +hyde | 0.0625 | 0.0519 | −0.0037 (−6%) | ↩︎ drop |
 | +hybrid_rrf | *(not run — provably ≡ baseline, see above)* | | | ↩︎ drop |
@@ -60,17 +60,17 @@ generic boilerplate sketch dilutes the real query rather than closing the
 NL↔code gap. Both bet on a capability this exact model doesn't have.
 
 Per this repo's own rule — *keep only what wins, drop anything that doesn't
-earn its place* — plain baseline is what's submitted. Both differentiators
-stay in the codebase (`--hyde`, `--multiview` flags; `config/submission.json`),
-verified and ready to re-measure against a code-specialized or larger model
-where the bet is more likely to pay off (see `docs/submission_checklist.md`
-/ README's "What's next").
+earn its place* — plain baseline stayed the reference at this point (it was
+later superseded by mpnet; see the final round). Both differentiators stay
+in the codebase (`--hyde`, `--multiview` flags; `config/submission.json`),
+verified and ready to re-measure on a larger model where the bet is more
+likely to pay off.
 
 ## Candidate model swap — also tested, also lost
 
 | Config | Model | NDCG@10 | MRR@10 | ΔNDCG vs base | Kept? |
 |---|---|---:|---:|---:|:--:|
-| **baseline** | all-MiniLM-L6-v2 | **0.0662** | **0.0561** | — | ✅ **kept — submitted** |
+| **baseline** | all-MiniLM-L6-v2 | **0.0662** | **0.0561** | — | ✅ kept → superseded by mpnet (final round) |
 | retrieval-tuned | multi-qa-MiniLM-L6-cos-v1 | 0.0484 | 0.0402 | −0.0178 (−27%) | ↩︎ drop |
 
 `multi-qa-MiniLM-L6-cos-v1` is pretrained on an asymmetric query→passage
@@ -91,7 +91,7 @@ a measured row rather than a prediction:
 
 | Config | What it changes | NDCG@10 | MRR@10 | ΔNDCG vs base | Kept? |
 |---|---|---:|---:|---:|:--:|
-| **baseline** | all-MiniLM-L6-v2 | **0.0662** | **0.0561** | — | ✅ **kept — submitted** |
+| **baseline** | all-MiniLM-L6-v2 | **0.0662** | **0.0561** | — | ✅ kept → superseded by mpnet (final round) |
 | +frontload | Prepends extracted keywords in front of each query, so salient tokens survive MiniLM's 256-wordpiece cut on long problem statements. | 0.0646 | 0.0536 | −0.0016 (−2.4%) | ↩︎ drop |
 | code_model | Swaps in `flax-sentence-embeddings/st-codesearch-distilroberta-base`, an 82M model pretrained on CodeSearchNet (code + docstrings). | 0.0333 | 0.0264 | −0.0329 (−50%) | ↩︎ drop |
 
@@ -106,16 +106,41 @@ weighted, while AppsRetrieval is pure Python — the pretraining distribution
 doesn't align with the eval; (b) the model was distilled and trained for
 docstring↔function retrieval, not natural-language problem statements
 ↔ full competitive-programming solutions, which is a much longer and
-messier query shape. So *"code-aware"* alone isn't the axis: we need
-**Python-heavy pretraining on NL-problem ↔ code-solution pairs**, not
-just any code-pretrained backbone. That's the sharpened next-step, and
-it's now in the README's "What's next".
+messier query shape. So *"code-aware"* alone isn't the axis — at this
+point we read the gap as needing Python-heavy pretraining on NL-problem ↔
+code-solution pairs. The final round below tested that reading, and the
+evidence pointed somewhere else.
 
-**Six real experiments on the actual leaderboard split now, all pointing
-the same direction:** multi-view, HyDE, front-loading, a retrieval-tuned
-NL model swap, and a code-pretrained model swap each underperformed plain
-baseline. Baseline (0.0662 / 0.0561) is submitted with high confidence
-it's the strongest configuration reachable within a CPU-only, small-model
-budget without a Python-heavy, NL-problem-aligned code-pretrained backend —
-the concrete next step for anyone continuing this work (see README's
-"What's next").
+## Final round — capacity vs. specialization (Kaggle, 2026-09-28)
+
+| Config | Model (params, input window) | NDCG@10 | MRR@10 | ΔNDCG vs base | Kept? |
+|---|---|---:|---:|---:|:--:|
+| baseline | all-MiniLM-L6-v2 (22M, 256 tokens) | 0.0662 | 0.0561 | — | reference |
+| unixcoder | microsoft/unixcoder-base (125M, 512 tokens) | 0.0434 | 0.0348 | −0.0228 (−34.5%) | ↩︎ drop |
+| **mpnet** | **sentence-transformers/all-mpnet-base-v2 (110M, 384 tokens)** | **0.0837** | **0.0714** | **+0.0175 (+26.5%)** | ✅ **kept — submitted** |
+
+**Reading it:** the only config that beat baseline is the only one that
+kept baseline's recipe. `all-mpnet-base-v2` comes from the same
+sentence-transformers "all-*" family as `all-MiniLM-L6-v2`, trained on the
+same mix of over a billion sentence pairs (which includes StackExchange
+programming Q&A); it changes the model size, not the training recipe.
+Every swap that moved *away* from that recipe lost: retrieval-tuned MiniLM
+(−27%), CodeSearchNet DistilRoBERTa (−50%), UniXcoder (−34.5%). That
+overturns the "Python-heavy code pretraining is the bottleneck" reading
+above: on this benchmark, at this model scale, **capacity within a broad
+general-purpose recipe beat domain specialization.**
+
+Caveats, stated up front:
+- **mpnet changes two things at once**: model size and input window (384
+  vs 256 tokens — each model's native maximum). This run can't split the
+  +26.5% between them; re-running mpnet at 256 tokens would.
+- **UniXcoder's row is a lower bound, not a verdict.** It ran through
+  sentence-transformers' generic mean pooling, without the `<encoder-only>`
+  mode prefix its authors use for retrieval.
+- **HyDE, multi-view and front-loading were only measured on MiniLM.**
+  They may behave differently on the larger encoder; re-measuring each on
+  top of mpnet is the next ablation.
+
+**Eight configs measured on the real leaderboard split; one kept.**
+Submitted: `config/mpnet.json` — NDCG@10 = **0.0837**, MRR@10 = **0.0714**.
+The six dropped configs stay implemented behind config flags.

@@ -39,7 +39,7 @@ only if the scoreboard says so.
 ```bash
 pip install -r requirements.txt        # numpy + rank-bm25
 pip install -e .
-python -m pytest -q                    # 70 tests, all offline
+python -m pytest -q                    # 75 tests, all offline
 python -m prism.cli demo --backend hashing
 python -m prism.cli demo --backend hashing --versioned
 python -m prism.cli ablation --backend hashing
@@ -55,39 +55,43 @@ CI, and graceful degradation. It is **not** the competition model — it exists 
 pip install -r requirements.txt -r requirements-eval.txt   # + mteb, sentence-transformers, torch(CPU)
 pip install -e .
 
-python -m prism.cli eval --config config/baseline.json \
+python -m prism.cli eval --config config/mpnet.json \
     --output results/appsretrieval_results.json
 ```
 
-`results/appsretrieval_results.json` is the leaderboard artifact (it carries the
-NDCG@10 / MRR plus the full MTEB result and the exact config that produced it).
+`results/appsretrieval_results.json` is the leaderboard artifact — the raw MTEB
+`task_result.to_dict()`, exactly as the problem statement's reference snippet
+writes it. `make eval` runs the same command.
 
-**Why baseline, not `config/submission.json`:** we measured both — see
-`docs/ablation_log.md` for the full ablation. On the real AppsRetrieval split,
-plain `all-MiniLM-L6-v2` (NDCG@10 = **0.0662**) beat every alternative we
-tried: HyDE (0.0625, −6%), front-loaded keywords (0.0646, −2.4%), multi-view
-(0.0515, −22%), a retrieval-tuned NL model (`multi-qa-MiniLM-L6-cos-v1`,
-0.0484, −27%), and a CodeSearchNet-pretrained code model
-(`st-codesearch-distilroberta-base`, 0.0333, −50%). `config/submission.json`
-(HyDE+multi-view stacked) scored lower still. Per this repo's own rule — keep
-only what wins — baseline is what's submitted. Every dropped feature stays
-implemented and independently verified.
+**What's submitted: `config/mpnet.json` — NDCG@10 = 0.0837, MRR@10 = 0.0714**
+on the real CoIR AppsRetrieval test split. It's
+`sentence-transformers/all-mpnet-base-v2` (110M params, 384-token window),
+CPU-only, with none of the pre/post differentiators switched on.
 
-`all-MiniLM-L6-v2` is a small *general-purpose* model with a 256-token cap — real
-AppsRetrieval queries/solutions often run longer, and it has never seen code
-during training, so treat its score as a floor, not a ceiling. We tried
-`config/code_model.json`, which swaps in
-`flax-sentence-embeddings/st-codesearch-distilroberta-base` (fine-tuned for
-code search with a 512-token window), and it lost by 50% — that model is
-Java/JS/PHP/Go/Ruby-weighted from CodeSearchNet and was distilled for
-docstring↔function retrieval, not Python problem-statement↔solution
-retrieval. So "code-aware" alone isn't the axis: the config remains for
-anyone who wants to re-run it, but the actual next-step is a Python-heavy
-NL↔code-pretrained backend.
+We measured eight configs on the real split and kept one — see
+`docs/ablation_log.md`:
+
+| Config | NDCG@10 | vs baseline |
+|---|---:|---:|
+| **mpnet (submitted)** | **0.0837** | **+26.5%** |
+| baseline — all-MiniLM-L6-v2 | 0.0662 | — |
+| + front-loaded keywords | 0.0646 | −2.4% |
+| + HyDE | 0.0625 | −6% |
+| + multi-view | 0.0515 | −22% |
+| retrieval-tuned `multi-qa-MiniLM-L6-cos-v1` | 0.0484 | −27% |
+| `microsoft/unixcoder-base` | 0.0434 | −34.5% |
+| CodeSearchNet `st-codesearch-distilroberta-base` | 0.0333 | −50% |
+
+The one winner kept baseline's training recipe (same sentence-transformers
+"all-*" family, same training mix) and only added capacity and a longer input
+window. Every swap toward a *specialized* model — retrieval-tuned, or
+pretrained on code — lost. On this benchmark, at this scale, capacity within a
+broad general-purpose recipe beat domain specialization. Every dropped config
+stays in `config/` and can be re-run the same way, e.g.:
 
 ```bash
-python -m prism.cli eval --config config/code_model.json \
-    --output results/appsretrieval_results.json
+python -m prism.cli eval --config config/baseline.json \
+    --output results/baseline_appsretrieval_results.json
 ```
 
 Some code-specialized models (e.g. Jina's code embedding models) ship custom
@@ -110,7 +114,8 @@ the offline backend on a load failure, since those aren't scoring anything.
 docker build -t prism-code-search .
 docker run --rm prism-code-search                     # offline: tests + demo
 docker run --rm -v "$PWD/results:/app/results" \      # leaderboard eval (needs network)
-    prism-code-search python -m prism.cli eval --output results/appsretrieval_results.json
+    prism-code-search python -m prism.cli eval --config config/mpnet.json \
+    --output results/appsretrieval_results.json
 ```
 
 ---
@@ -194,10 +199,11 @@ prism/
   eval/                 mteb_runner.py, synthetic_task.py (offline MTEB task)
   data.py               synthetic AppsRetrieval-like fixtures
   cli.py                prism-eval / prism-demo / prism-ablation
-config/                 baseline.json (submitted), submission.json, code_model.json,
-                        retrieval_tuned.json, multiview_trimmed.json — see docs/ablation_log.md
+config/                 mpnet.json (submitted), baseline.json, submission.json, frontload.json,
+                        retrieval_tuned.json, code_model.json, unixcoder.json,
+                        multiview_trimmed.json — results in docs/ablation_log.md
 scripts/                thin CLI wrappers
-tests/                  70 tests, offline; MTEB integration auto-skips if absent
+tests/                  75 tests, offline; MTEB integration auto-skips if absent
 docs/                   architecture.md, submission_checklist.md
 Dockerfile, Makefile, requirements*.txt
 ```
@@ -213,13 +219,12 @@ Dockerfile, Makefile, requirements*.txt
 
 ## Limitations (honest scope)
 
-- **Every non-baseline config underperforms plain baseline** on the real
-  AppsRetrieval split — HyDE, multi-view, keyword front-loading, a
-  retrieval-tuned NL model, and even a CodeSearchNet-pretrained code model
-  (see `docs/ablation_log.md`). The consistent bottleneck isn't any pipeline
-  trick; it's a base model that's actually pretrained on Python NL↔code
-  pairs. Baseline is what's submitted; every dropped feature stays
-  implemented for re-measurement against the right backbone.
+- **None of the pre/post differentiators is in the submitted config.** HyDE,
+  multi-view and keyword front-loading all lost to plain MiniLM on the real
+  split; they haven't yet been re-measured on top of mpnet, where they may
+  behave differently (see `docs/ablation_log.md`).
+- **The mpnet win changes two things at once** — model size and input window
+  (384 vs 256 tokens). The +26.5% isn't yet split between the two.
 - The evolutionary bonus is a measurable **prototype**. Its version-discrimination
   gain is realized with the semantic backend; on the lexical fallback it holds
   parity with naive. The cheap-rebuild P1 requirement is fully working.

@@ -3,8 +3,8 @@
 
 Thin wrapper around ``prism.cli eval``. Example:
 
-    python scripts/run_eval.py --model sentence-transformers/all-MiniLM-L6-v2 \
-        --multiview --output results/appsretrieval_results.json
+    python scripts/run_eval.py --config config/mpnet.json \
+        --output results/appsretrieval_results.json
 """
 
 import sys
