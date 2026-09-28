@@ -33,7 +33,7 @@ ablation:
 
 # The leaderboard run (submitted config). Needs network (model + dataset download on first use).
 eval:
-	python -m prism.cli eval --config config/mpnet.json --output results/appsretrieval_results.json
+	python -m prism.cli eval --config config/mpnet_512.json --output results/appsretrieval_results.json
 
 docker:
 	docker build -t prism-code-search .

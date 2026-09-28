@@ -117,7 +117,7 @@ evidence pointed somewhere else.
 |---|---|---:|---:|---:|:--:|
 | baseline | all-MiniLM-L6-v2 (22M, 256 tokens) | 0.0662 | 0.0561 | — | reference |
 | unixcoder | microsoft/unixcoder-base (125M, 512 tokens) | 0.0434 | 0.0348 | −0.0228 (−34.5%) | ↩︎ drop |
-| **mpnet** | **sentence-transformers/all-mpnet-base-v2 (110M, 384 tokens)** | **0.0837** | **0.0714** | **+0.0175 (+26.5%)** | ✅ **kept — submitted** |
+| **mpnet** | **sentence-transformers/all-mpnet-base-v2 (110M, 384 tokens)** | **0.0837** | **0.0714** | **+0.0175 (+26.5%)** | ✅ kept → superseded by mpnet-512 (below) |
 
 **Reading it:** the only config that beat baseline is the only one that
 kept baseline's recipe. `all-mpnet-base-v2` comes from the same
@@ -141,6 +141,25 @@ Caveats, stated up front:
   They may behave differently on the larger encoder; re-measuring each on
   top of mpnet is the next ablation.
 
-**Eight configs measured on the real leaderboard split; one kept.**
-Submitted: `config/mpnet.json` — NDCG@10 = **0.0837**, MRR@10 = **0.0714**.
-The six dropped configs stay implemented behind config flags.
+## Window follow-up — one variable, one number (Kaggle, 2026-09-28)
+
+AppsRetrieval problem statements and solutions often run past 384 tokens, so
+the direct follow-up was to give mpnet more of each text. `config/mpnet_512.json`
+is identical to `config/mpnet.json` except `max_seq_length` (384 → 512, within
+MPNet's 514 position embeddings).
+
+| Config | Change vs mpnet | NDCG@10 | MRR@10 | Δ vs mpnet | Δ vs base | Kept? |
+|---|---|---:|---:|---:|---:|:--:|
+| mpnet | — (384 tokens) | 0.0837 | 0.0714 | — | +26.5% | superseded |
+| **mpnet-512** | **input window 512 tokens** | **0.0861** | **0.0733** | **+2.9%** | **+30.1%** | ✅ **kept — submitted** |
+
+**Reading it:** a clean single-variable win — both NDCG@10 and MRR@10 rose,
+so longer context genuinely helps on this benchmark even though the model's
+sentence-embedding fine-tuning used much shorter inputs. The gain is modest; it doesn't resolve the first
+caveat above (how much of MiniLM → mpnet was size vs. window), but it shows the
+window matters at least at the 384 → 512 step.
+
+**Nine configs measured on the real leaderboard split; one kept.**
+Submitted: `config/mpnet_512.json` — NDCG@10 = **0.0861**, MRR@10 = **0.0733**
+(+30.1% over the MiniLM baseline). The other configs stay implemented behind
+config flags.

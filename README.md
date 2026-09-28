@@ -55,25 +55,26 @@ CI, and graceful degradation. It is **not** the competition model — it exists 
 pip install -r requirements.txt -r requirements-eval.txt   # + mteb, sentence-transformers, torch(CPU)
 pip install -e .
 
-python -m prism.cli eval --config config/mpnet.json \
+python -m prism.cli eval --config config/mpnet_512.json \
     --output results/appsretrieval_results.json
 ```
 
 `results/appsretrieval_results.json` is the leaderboard artifact — the raw MTEB
 `task_result.to_dict()`, exactly as the problem statement's reference snippet
-writes it. `make eval` runs the same command.
+writes it. `make eval` runs the same command (about 2.5 h on a free Kaggle CPU).
 
-**What's submitted: `config/mpnet.json` — NDCG@10 = 0.0837, MRR@10 = 0.0714**
+**What's submitted: `config/mpnet_512.json` — NDCG@10 = 0.0861, MRR@10 = 0.0733**
 on the real CoIR AppsRetrieval test split. It's
-`sentence-transformers/all-mpnet-base-v2` (110M params, 384-token window),
-CPU-only, with none of the pre/post differentiators switched on.
+`sentence-transformers/all-mpnet-base-v2` (110M params) with a 512-token input
+window, CPU-only, with none of the pre/post differentiators switched on.
 
-We measured eight configs on the real split and kept one — see
+We measured nine configs on the real split and kept one — see
 `docs/ablation_log.md`:
 
 | Config | NDCG@10 | vs baseline |
 |---|---:|---:|
-| **mpnet (submitted)** | **0.0837** | **+26.5%** |
+| **mpnet, 512-token window (submitted)** | **0.0861** | **+30.1%** |
+| mpnet, 384-token window | 0.0837 | +26.5% |
 | baseline — all-MiniLM-L6-v2 | 0.0662 | — |
 | + front-loaded keywords | 0.0646 | −2.4% |
 | + HyDE | 0.0625 | −6% |
@@ -82,10 +83,11 @@ We measured eight configs on the real split and kept one — see
 | `microsoft/unixcoder-base` | 0.0434 | −34.5% |
 | CodeSearchNet `st-codesearch-distilroberta-base` | 0.0333 | −50% |
 
-The one winner kept baseline's training recipe (same sentence-transformers
-"all-*" family, same training mix) and only added capacity and a longer input
-window. Every swap toward a *specialized* model — retrieval-tuned, or
-pretrained on code — lost. On this benchmark, at this scale, capacity within a
+Both configs that beat baseline kept its training recipe (same
+sentence-transformers "all-*" family, same training mix) and only added
+capacity and a longer input window; stretching the window from 384 to 512
+tokens added another +2.9% on its own. Every swap toward a *specialized*
+model — retrieval-tuned, or pretrained on code — lost. On this benchmark, at this scale, capacity within a
 broad general-purpose recipe beat domain specialization. Every dropped config
 stays in `config/` and can be re-run the same way, e.g.:
 
@@ -114,7 +116,7 @@ the offline backend on a load failure, since those aren't scoring anything.
 docker build -t prism-code-search .
 docker run --rm prism-code-search                     # offline: tests + demo
 docker run --rm -v "$PWD/results:/app/results" \      # leaderboard eval (needs network)
-    prism-code-search python -m prism.cli eval --config config/mpnet.json \
+    prism-code-search python -m prism.cli eval --config config/mpnet_512.json \
     --output results/appsretrieval_results.json
 ```
 
@@ -199,7 +201,7 @@ prism/
   eval/                 mteb_runner.py, synthetic_task.py (offline MTEB task)
   data.py               synthetic AppsRetrieval-like fixtures
   cli.py                prism-eval / prism-demo / prism-ablation
-config/                 mpnet.json (submitted), baseline.json, submission.json, frontload.json,
+config/                 mpnet_512.json (submitted), mpnet.json, baseline.json, submission.json, frontload.json,
                         retrieval_tuned.json, code_model.json, unixcoder.json,
                         multiview_trimmed.json — results in docs/ablation_log.md
 scripts/                thin CLI wrappers
@@ -223,8 +225,9 @@ Dockerfile, Makefile, requirements*.txt
   multi-view and keyword front-loading all lost to plain MiniLM on the real
   split; they haven't yet been re-measured on top of mpnet, where they may
   behave differently (see `docs/ablation_log.md`).
-- **The mpnet win changes two things at once** — model size and input window
-  (384 vs 256 tokens). The +26.5% isn't yet split between the two.
+- **The MiniLM → mpnet jump changes two things at once** — model size and
+  input window (384 vs 256 tokens) — so that +26.5% isn't split between them
+  yet. The 384 → 512 step, measured on its own, added +2.9%.
 - The evolutionary bonus is a measurable **prototype**. Its version-discrimination
   gain is realized with the semantic backend; on the lexical fallback it holds
   parity with naive. The cheap-rebuild P1 requirement is fully working.

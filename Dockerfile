@@ -9,7 +9,7 @@
 # Real leaderboard eval with the submitted config (needs network for the model +
 # CoIR dataset the first time):
 #   docker run --rm -v "$PWD/results:/app/results" prism-code-search \
-#       python -m prism.cli eval --config config/mpnet.json \
+#       python -m prism.cli eval --config config/mpnet_512.json \
 #       --output results/appsretrieval_results.json
 #
 FROM python:3.11-slim
