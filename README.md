@@ -6,10 +6,13 @@ is pure retrieval (no generation) and is scored by
 [MTEB](https://github.com/embeddings-benchmark/mteb) on the CoIR
 `AppsRetrieval` test split via **NDCG@10** and **MRR**.
 
-The design bet: *win on a number, not a demo.* We wrap a small embedding model
-and put the cleverness in the pre- and post-processing around it — where a
-sharp, full-time solo build out-iterates raw model scale on a CPU-only,
-leaderboard-scored task.
+The design bet: *win on a number, not a demo.* Every stage around the embedding
+model is a switchable, measured layer, and a stage stays on only if it beats the
+baseline on the real split. Those measurements picked the submitted config:
+`all-mpnet-base-v2` with a 512-token window, plus structure-preserving snippet
+cleanup and chunking of long snippets. HyDE, multi-view and dense+BM25 hybrid
+scoring (shown below) are built and switchable by config, but they lost on the
+real split, so they're off — see `docs/ablation_log.md`.
 
 ```
         ┌───────────────────────────┐        ┌────────────────────────────┐
@@ -29,6 +32,15 @@ leaderboard-scored task.
 Everything is a **measurable layer on top of a baseline floor**: get a real
 NDCG@10 on the board first, then add one differentiator at a time and keep it
 only if the scoreboard says so.
+
+## Submission — PRISM GenAI Hackathon 2026, Theme 1 (Team Trace)
+
+- **Result:** NDCG@10 = **0.0861**, MRR@10 = **0.0733** on the CoIR AppsRetrieval
+  test split, from `config/mpnet_512.json`. The MTEB results JSON is attached to the
+  [`PRISM_GENAI_HACKATHON_Y2026` release](https://github.com/Ajha2005/samsung-prism/releases/tag/PRISM_GENAI_HACKATHON_Y2026).
+- **Deck:** [`submission/Thapar_Trace_Submission_ppt.pptx`](submission/Thapar_Trace_Submission_ppt.pptx)
+  ([PDF](submission/Thapar_Trace_Submission_ppt.pdf))
+- **Reproduce the result:** `make eval` (see *Leaderboard run* below).
 
 ---
 
@@ -221,7 +233,8 @@ config/                 mpnet_512.json (submitted), mpnet.json, baseline.json, s
                         multiview_trimmed.json — results in docs/ablation_log.md
 scripts/                thin CLI wrappers
 tests/                  77 tests, offline; MTEB integration auto-skips if absent
-docs/                   architecture.md, submission_checklist.md
+docs/                   architecture.md, submission_checklist.md, ablation_log.md
+submission/             the deck (PPTX + PDF)
 Dockerfile, Makefile, requirements*.txt
 ```
 
