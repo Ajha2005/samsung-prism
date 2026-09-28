@@ -88,6 +88,20 @@ def eval_main(argv: Optional[List[str]] = None) -> int:
 # --------------------------------------------------------------------------- #
 # demo
 # --------------------------------------------------------------------------- #
+def _print_backend(backend, config: PipelineConfig) -> None:
+    # The demo builds its backend non-strictly, so a model that fails to load
+    # silently becomes the hashing fallback; say which embedder actually ran.
+    model_name = getattr(backend, "model_name", None)
+    if model_name:
+        print(f"[prism-demo] embedding model: {model_name} "
+              f"(max_seq_length={backend.model.max_seq_length}, device={backend.model.device})")
+        return
+    print(f"[prism-demo] embedding backend: offline {type(backend).__name__} (deterministic, no downloads)")
+    if config.backend.kind == "sentence_transformer":
+        print(f"[prism-demo] WARNING: {config.backend.model_name} did not load; "
+              f"this run used the offline fallback, not the requested model")
+
+
 def demo_main(argv: Optional[List[str]] = None) -> int:
     p = argparse.ArgumentParser(prog="prism-demo", description="Interactive/CLI retrieval demo on real queries.")
     _add_common_backend_args(p)
@@ -110,6 +124,7 @@ def demo_main(argv: Optional[List[str]] = None) -> int:
     config = _build_config(args, name="demo")
     print(f"[prism-demo] indexing {len(corpus)} snippets | config: {config.describe()}")
     retriever = CodeRetriever(config).index(corpus)
+    _print_backend(retriever.encoder.backend, config)
     print(f"[prism-demo] index built in {retriever.telemetry.index_build_seconds*1000:.1f} ms")
 
     demo_queries = args.query or [
@@ -155,6 +170,7 @@ def _demo_versioned(args) -> int:
     config = _build_config(args, name="versioned-demo")
     config.versioning.enabled = True
     encoder = PrePostPipelineEncoder(config)
+    _print_backend(encoder.backend, config)
 
     # 1) Cheap versioned rebuild (P1): only changed snippets get re-encoded. ----
     corpus, _, _ = load_synthetic_corpus()

@@ -39,7 +39,7 @@ only if the scoreboard says so.
 ```bash
 pip install -r requirements.txt        # numpy + rank-bm25
 pip install -e .
-python -m pytest -q                    # 75 tests, all offline
+python -m pytest -q                    # 77 tests, all offline
 python -m prism.cli demo --backend hashing
 python -m prism.cli demo --backend hashing --versioned
 python -m prism.cli ablation --backend hashing
@@ -48,6 +48,21 @@ python -m prism.cli ablation --backend hashing
 The `hashing` backend is a deterministic, download-free embedder used for tests,
 CI, and graceful degradation. It is **not** the competition model — it exists so
 `one command → a number` always holds.
+
+### Demo with the submitted model (needs network for the model download)
+
+```bash
+pip install -r requirements.txt -r requirements-eval.txt && pip install -e .
+python -m prism.cli demo --config config/mpnet_512.json
+python -m prism.cli demo --config config/mpnet_512.json \
+    --query "given a list of meeting times, collapse the ones that overlap"
+python -m prism.cli demo --config config/mpnet_512.json --versioned   # P1 + evolutionary bonus
+```
+
+`--query` takes any natural-language query (repeatable) and prints the ranked
+snippets with per-query latency. The demo prints which embedding model actually
+loaded; if the model can't be downloaded it falls back to the offline backend
+and prints a `WARNING` saying so.
 
 ### Leaderboard run (needs network: model + CoIR dataset)
 
@@ -205,7 +220,7 @@ config/                 mpnet_512.json (submitted), mpnet.json, baseline.json, s
                         retrieval_tuned.json, code_model.json, unixcoder.json,
                         multiview_trimmed.json — results in docs/ablation_log.md
 scripts/                thin CLI wrappers
-tests/                  75 tests, offline; MTEB integration auto-skips if absent
+tests/                  77 tests, offline; MTEB integration auto-skips if absent
 docs/                   architecture.md, submission_checklist.md
 Dockerfile, Makefile, requirements*.txt
 ```

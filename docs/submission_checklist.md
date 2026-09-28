@@ -52,7 +52,7 @@
   over the MiniLM baseline). Full record and reasoning in `docs/ablation_log.md`.
 - P1 cheap versioned rebuild (working) + evolutionary-retrieval prototype.
 - Operational telemetry (precision@k, recall, latency, index build/rebuild cost).
-- 75 offline tests; Docker image whose default run is tests + demo.
+- 77 offline tests; Docker image whose default run is tests + demo.
 
 ## Human still needs to
 1. Register / confirm registration on the Google Form.
