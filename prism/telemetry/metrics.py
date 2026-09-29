@@ -124,10 +124,12 @@ class RunTelemetry:
 
     @property
     def queries_per_second(self) -> float:
+        """Ranking throughput; query encoding is counted in ``encode_seconds``."""
         return self.num_queries / self.query_seconds if self.query_seconds > 0 else 0.0
 
     @property
     def mean_query_latency_ms(self) -> float:
+        """Ranking time per query; query encoding is counted in ``encode_seconds``."""
         return 1000.0 * self.query_seconds / self.num_queries if self.num_queries else 0.0
 
     def to_dict(self) -> Dict[str, object]:

@@ -44,7 +44,7 @@ class AblationLog:
 
     def to_markdown(self) -> str:
         lines = [
-            "| Config | Signature | NDCG@10 | MRR@10 | ΔNDCG vs base | Latency (ms) | Verdict |",
+            "| Config | Signature | NDCG@10 | MRR@10 | ΔNDCG vs base | Ranking (ms/query) | Verdict |",
             "|---|---|---:|---:|---:|---:|:--:|",
         ]
         for r in self.rows:

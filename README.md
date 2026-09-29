@@ -72,9 +72,11 @@ python -m prism.cli demo --config config/e5_base.json --versioned   # P1 + evolu
 ```
 
 `--query` takes any natural-language query (repeatable) and prints the ranked
-snippets with per-query latency. The demo prints which embedding model actually
-loaded; if the model can't be downloaded it falls back to the offline backend
-and prints a `WARNING` saying so.
+snippets with per-query latency. With e5-base-v2 on CPU a query takes about
+42 ms end to end (embedding the query plus ranking); the demo prints that figure
+and, separately, the ranking step alone. It also prints which embedding model
+actually loaded; if the model can't be downloaded it falls back to the offline
+backend and prints a `WARNING` saying so.
 
 ### Leaderboard run (needs network: model + CoIR dataset)
 
@@ -174,9 +176,10 @@ if it wins on the scoreboard (`python -m prism.cli ablation`).
    content-addressed index rebuilds cheaply across code versions (only changed
    snippets are re-encoded). A **stable-core + version-delta** representation
    keeps near-identical versions distinguishable: `vector = normalize(base +
-   delta_weight · delta)`, so `delta_weight=0` is exactly the naive vector (it can
-   only match or beat the baseline) and the delta term pulls a version-specific
-   query toward the right sibling.
+   delta_weight · delta)`, so `delta_weight=0` is exactly the naive vector. The
+   delta term is meant to pull a version-specific query toward the right
+   sibling; measured so far it ties naive retrieval, even on e5-base-v2 (see
+   Limitations).
    → `prism/index/versioned.py`, `prism/index/evolutionary.py`
 
 ---
@@ -191,7 +194,8 @@ if it wins on the scoreboard (`python -m prism.cli ablation`).
   MRR → kept/dropped` table (`results/ablation_log.md` + `.json`) against a live
   baseline — the experiment log, the regression guard, and half the slides.
 - **Operational metrics.** The demo and retriever report precision@k, recall,
-  query latency, and index build/rebuild cost — what the hands-on round asks for.
+  query latency (end to end, and the ranking step alone), and index
+  build/rebuild cost — what the hands-on round asks for.
 
 Illustrative offline ablation (deterministic `hashing` backend on the bundled
 synthetic set — the real numbers come from `--apps`):
@@ -255,9 +259,10 @@ Dockerfile, Makefile, requirements*.txt
   behave differently (see `docs/ablation_log.md`).
 - **Larger retrieval models are untested.** e5-base-v2 is 110M params; bigger
   ones (e.g. e5-large) may score higher but cost roughly 3× the CPU time.
-- The evolutionary bonus is a measurable **prototype**. Its version-discrimination
-  gain is realized with the semantic backend; on the lexical fallback it holds
-  parity with naive. The cheap-rebuild P1 requirement is fully working.
+- The evolutionary bonus is a **prototype with no measured gain yet**: the
+  stable-core + version-delta representation ties naive full-text retrieval on
+  both the offline backend and e5-base-v2. The cheap-rebuild P1 requirement is
+  fully working (in the demo, a one-snippet change re-encodes 1 of 18 snippets).
 - The offline `hashing` backend is lexical, so offline numbers under-represent
   what the real embedding model achieves on semantic/behavioral queries.
 - Hybrid dense+BM25 scoring shapes the standalone retriever's ranking; MTEB scores

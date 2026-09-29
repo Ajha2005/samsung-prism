@@ -15,6 +15,9 @@ def test_offline_backend_is_labelled(capsys):
     out = capsys.readouterr().out
     assert "embedding backend: offline HashingBackend" in out
     assert "WARNING" not in out
+    # Latency is labelled by what it measures: the full query path vs ranking alone.
+    assert "end to end (encode + rank)" in out
+    assert "ranking step only" in out
 
 
 def test_fallback_from_requested_model_is_flagged(capsys, monkeypatch):

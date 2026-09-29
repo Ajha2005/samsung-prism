@@ -135,10 +135,12 @@ def demo_main(argv: Optional[List[str]] = None) -> int:
     ]
     import time
 
+    e2e_ms = []
     for q in demo_queries:
         t0 = time.perf_counter()
         hits = retriever.search(q, top_k=args.top_k)
         dt = (time.perf_counter() - t0) * 1000
+        e2e_ms.append(dt)
         print(f"\nQ: {q}   ({dt:.1f} ms)")
         for rank, hit in enumerate(hits, 1):
             first_line = hit.text.strip().splitlines()[0]
@@ -152,8 +154,12 @@ def demo_main(argv: Optional[List[str]] = None) -> int:
         f"NDCG@10={m['ndcg_at_10']:.4f}  MRR@10={m['mrr_at_10']:.4f}  "
         f"Recall@10={m['recall_at_10']:.4f}  P@1={m['precision_at_1']:.4f}"
     )
-    print(f"[prism-demo] mean query latency: {retriever.telemetry.mean_query_latency_ms:.2f} ms "
-          f"({retriever.telemetry.queries_per_second:.0f} q/s)")
+    # search() embeds the query and ranks it; batch_search() times ranking alone
+    # (query encoding goes to encode_seconds), so report the two separately.
+    print(f"[prism-demo] mean query latency, end to end (encode + rank): "
+          f"{sum(e2e_ms) / len(e2e_ms):.1f} ms over {len(e2e_ms)} queries")
+    print(f"[prism-demo] ranking step only (query vectors precomputed): "
+          f"{retriever.telemetry.mean_query_latency_ms:.2f} ms ({retriever.telemetry.queries_per_second:.0f} q/s)")
     return 0
 
 
@@ -226,9 +232,9 @@ def _demo_versioned(args) -> int:
     print(f"     {'representation':22s} {'P@1':>6s} {'NDCG@3':>8s}")
     print(f"     {'naive full-text':22s} {naive_m['precision_at_1']:6.3f} {naive_m['ndcg_at_3']:8.3f}")
     print(f"     {'stable-core + delta':22s} {evo_m['precision_at_1']:6.3f} {evo_m['ndcg_at_3']:8.3f}")
-    if config.backend.kind == "hashing":
-        print("\n   note: delta_weight=0 reduces to naive; the discrimination gain is realized with the")
-        print("   semantic backend (--backend sentence_transformer). On the lexical fallback it holds parity.")
+    gain = evo_m["ndcg_at_3"] - naive_m["ndcg_at_3"]
+    verdict = "ties" if abs(gain) < 5e-4 else ("beats" if gain > 0 else "trails")
+    print(f"\n   stable-core + delta {verdict} naive here (delta_weight=0 reduces exactly to naive).")
     return 0
 
 

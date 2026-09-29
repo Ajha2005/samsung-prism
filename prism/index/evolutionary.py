@@ -17,8 +17,8 @@ a query cannot tell which version it wants. The fix is to encode what is
                 what pulls a *version-specific* query to the right sibling.
 
 Why base+delta rather than core+delta: ``delta_weight=0`` then reduces *exactly*
-to the naive vector, so the representation can only match or beat the baseline,
-never fall below it. The invariant "stable core" is still computed (it is how the
+to the naive vector, so naive retrieval is a built-in control for every run.
+The invariant "stable core" is still computed (it is how the
 delta is identified, and it is what the versioned index caches for cheap
 rebuilds); it simply lives inside the base embedding rather than replacing it.
 
@@ -27,10 +27,10 @@ Design choice that matters: we classify a line as core/delta by comparing a
 **raw** lines — canonicalizing them away would discard the identifier names that
 lexical and semantic queries match on.
 
-Honest scope: the discrimination gain is realized with a *semantic* embedding
-backend, where the delta's meaning is separable even when lexically diluted. On
-the deterministic lexical fallback it holds parity with naive. This is a
-measurable prototype, exactly as the build plan frames the bonus.
+Measured so far: on the targeted version queries it ties naive retrieval, both
+on the deterministic lexical fallback and on e5-base-v2, so there is no
+discrimination gain yet. It is a measurable prototype; the cheap versioned
+rebuild (``versioned.py``) is the part of P1 that works today.
 """
 
 from __future__ import annotations
