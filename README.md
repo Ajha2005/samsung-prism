@@ -266,8 +266,8 @@ Dockerfile · Makefile · requirements*.txt · pyproject.toml
 
 Most of this repository (code, tests, documentation and slides) was written with Claude Code,
 Anthropic's coding assistant, from my instructions. I directed the work, ran every
-experiment on my own Kaggle, Colab and PC accounts, and decided what to submit. The full
-disclosure is in [`submission/Thapar_Trace_AI_Disclosure.pdf`](submission/Thapar_Trace_AI_Disclosure.pdf).
+experiment on my own Kaggle, Colab and PC accounts, and decided what to submit. The AI usage
+disclosure form is in [`submission/Thapar_Trace_AI_Disclosure.pdf`](submission/Thapar_Trace_AI_Disclosure.pdf).
 
 ## License and credits
 
