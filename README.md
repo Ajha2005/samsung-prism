@@ -41,6 +41,7 @@ only if the scoreboard says so.
   [`PRISM_GENAI_HACKATHON_Y2026` release](https://github.com/Ajha2005/samsung-prism/releases/tag/PRISM_GENAI_HACKATHON_Y2026).
 - **Deck:** [`submission/Thapar_Trace_Submission_ppt.pptx`](submission/Thapar_Trace_Submission_ppt.pptx)
   ([PDF](submission/Thapar_Trace_Submission_ppt.pdf))
+- **Demo video:** [YouTube](https://youtu.be/qD0DrWegOMI)
 - **Reproduce the result:** `make eval` (see *Leaderboard run* below).
 
 ---
