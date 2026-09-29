@@ -62,7 +62,7 @@ NL↔code gap. Both bet on a capability this exact model doesn't have.
 Per this repo's own rule — *keep only what wins, drop anything that doesn't
 earn its place* — plain baseline stayed the reference at this point (it was
 later superseded by mpnet; see the final round). Both differentiators stay
-in the codebase (`--hyde`, `--multiview` flags; `config/submission.json`),
+in the codebase (`--hyde`, `--multiview` flags),
 verified and ready to re-measure on a larger model where the bet is more
 likely to pay off.
 

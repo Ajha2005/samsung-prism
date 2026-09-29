@@ -31,13 +31,6 @@ class BackendConfig:
 
     kind: str = "sentence_transformer"
     model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
-    # Candidate models we A/B in Phase 1 (score vs. CPU latency). Documented here
-    # so the sweep is reproducible; see scripts/run_ablation.py.
-    candidate_models: tuple = (
-        "sentence-transformers/all-MiniLM-L6-v2",
-        "BAAI/bge-small-en-v1.5",
-        "Salesforce/SFR-Embedding-Code-400M_R",
-    )
     normalize: bool = True
     batch_size: int = 32
     device: str = "cpu"

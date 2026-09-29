@@ -229,12 +229,11 @@ prism/
   eval/                 mteb_runner.py, synthetic_task.py (offline MTEB task)
   data.py               synthetic AppsRetrieval-like fixtures
   cli.py                prism-eval / prism-demo / prism-ablation
-config/                 e5_base.json (submitted), mpnet_512.json, mpnet.json, baseline.json, submission.json, frontload.json,
-                        retrieval_tuned.json, code_model.json, unixcoder.json,
-                        multiview_trimmed.json — results in docs/ablation_log.md
-scripts/                thin CLI wrappers
+config/                 e5_base.json (submitted), mpnet_512.json, mpnet.json, unixcoder.json,
+                        baseline.json, frontload.json, retrieval_tuned.json,
+                        code_model.json — results in docs/ablation_log.md
 tests/                  78 tests, offline; MTEB integration auto-skips if absent
-docs/                   architecture.md, submission_checklist.md, ablation_log.md
+docs/                   architecture.md, ablation_log.md
 submission/             the deck (PPTX + PDF)
 Dockerfile, Makefile, requirements*.txt
 ```
@@ -264,6 +263,3 @@ Dockerfile, Makefile, requirements*.txt
 - Hybrid dense+BM25 scoring shapes the standalone retriever's ranking; MTEB scores
   the pure encoder, so hybrid is reported in ablations but off in the encoder
   submission unless folded into the vector.
-
-See `docs/submission_checklist.md` for the deliverables checklist and the exact
-release-tag / naming requirements.

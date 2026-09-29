@@ -9,7 +9,7 @@ description = "Agentic Code Intelligence: a CPU-friendly code-retrieval pipeline
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
-authors = [{ name = "PRISM Theme 1 Submission" }]
+authors = [{ name = "Abhavya Jha", email = "ajha2_be24@thapar.edu" }]
 keywords = ["code-retrieval", "embeddings", "mteb", "hyde", "multi-view", "information-retrieval"]
 
 # Runtime dependencies are declared here for `pip install .`.
