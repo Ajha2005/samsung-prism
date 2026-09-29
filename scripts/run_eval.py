@@ -3,7 +3,7 @@
 
 Thin wrapper around ``prism.cli eval``. Example:
 
-    python scripts/run_eval.py --config config/mpnet_512.json \
+    python scripts/run_eval.py --config config/e5_base.json \
         --output results/appsretrieval_results.json
 """
 

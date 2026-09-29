@@ -151,7 +151,7 @@ MPNet's 514 position embeddings).
 | Config | Change vs mpnet | NDCG@10 | MRR@10 | Δ vs mpnet | Δ vs base | Kept? |
 |---|---|---:|---:|---:|---:|:--:|
 | mpnet | — (384 tokens) | 0.0837 | 0.0714 | — | +26.5% | superseded |
-| **mpnet-512** | **input window 512 tokens** | **0.0861** | **0.0733** | **+2.9%** | **+30.1%** | ✅ **kept — submitted** |
+| **mpnet-512** | **input window 512 tokens** | **0.0861** | **0.0733** | **+2.9%** | **+30.1%** | ✅ kept → superseded by e5-base (below) |
 
 **Reading it:** a clean single-variable win — both NDCG@10 and MRR@10 rose,
 so longer context genuinely helps on this benchmark even though the model's
@@ -159,7 +159,31 @@ sentence-embedding fine-tuning used much shorter inputs. The gain is modest; it 
 caveat above (how much of MiniLM → mpnet was size vs. window), but it shows the
 window matters at least at the 384 → 512 step.
 
-**Nine configs measured on the real leaderboard split; one kept.**
-Submitted: `config/mpnet_512.json` — NDCG@10 = **0.0861**, MRR@10 = **0.0733**
-(+30.1% over the MiniLM baseline). The other configs stay implemented behind
-config flags.
+## Retrieval-trained model at the same size (Kaggle, 2026-09-29)
+
+`config/e5_base.json` keeps everything from `config/mpnet_512.json` — same
+110M size class, 512-token window, same pre-processing — and swaps the model
+for `intfloat/e5-base-v2`, which is trained specifically for query → passage
+retrieval and expects a `"query: "` prefix on queries and `"passage: "` on
+documents (`tests/test_model_prompts.py` checks the prefixes land on the right
+side).
+
+| Config | Model | NDCG@10 | MRR@10 | Δ vs mpnet-512 | Δ vs base | Kept? |
+|---|---|---:|---:|---:|---:|:--:|
+| mpnet-512 | all-mpnet-base-v2 | 0.0861 | 0.0733 | — | +30.1% | superseded |
+| **e5-base** | **intfloat/e5-base-v2 + query/passage prefixes** | **0.1151** | **0.0986** | **+33.7%** | **+73.9%** | ✅ **kept — submitted** |
+
+**Reading it:** the biggest single jump in the log, at no extra size or CPU
+cost (this run took 84 min vs. ~146 min for mpnet-512). It refines the
+"capacity beat specialization" reading above: at equal size and window, a
+model trained for asymmetric query → passage retrieval beat a
+sentence-similarity model by a third. "Retrieval-tuned" alone isn't the axis
+either — the small `multi-qa-MiniLM-L6-cos-v1` lost — so the practical lesson
+is to pick the strongest general retrieval model the CPU budget allows, and
+code-specialized models (CodeSearchNet, UniXcoder) still lost here.
+
+**Ten configs measured on the real leaderboard split; one kept.**
+Submitted: `config/e5_base.json` — NDCG@10 = **0.1151**, MRR@10 = **0.0986**
+(+73.9% over the MiniLM baseline). The other configs stay implemented behind
+config flags. HyDE, multi-view and front-loading were only measured on MiniLM;
+re-measuring them on e5 is the next ablation.

@@ -9,8 +9,8 @@ is pure retrieval (no generation) and is scored by
 The design bet: *win on a number, not a demo.* Every stage around the embedding
 model is a switchable, measured layer, and a stage stays on only if it beats the
 baseline on the real split. Those measurements picked the submitted config:
-`all-mpnet-base-v2` with a 512-token window, plus structure-preserving snippet
-cleanup and chunking of long snippets. HyDE, multi-view and dense+BM25 hybrid
+`intfloat/e5-base-v2` with its `query:` / `passage:` prefixes and a 512-token
+window, plus structure-preserving snippet cleanup and chunking of long snippets. HyDE, multi-view and dense+BM25 hybrid
 scoring (shown below) are built and switchable by config, but they lost on the
 real split, so they're off — see `docs/ablation_log.md`.
 
@@ -35,8 +35,8 @@ only if the scoreboard says so.
 
 ## Submission — PRISM GenAI Hackathon 2026, Theme 1 (Team Trace)
 
-- **Result:** NDCG@10 = **0.0861**, MRR@10 = **0.0733** on the CoIR AppsRetrieval
-  test split, from `config/mpnet_512.json`. The MTEB results JSON is attached to the
+- **Result:** NDCG@10 = **0.1151**, MRR@10 = **0.0986** on the CoIR AppsRetrieval
+  test split, from `config/e5_base.json`. The MTEB results JSON is attached to the
   [`PRISM_GENAI_HACKATHON_Y2026` release](https://github.com/Ajha2005/samsung-prism/releases/tag/PRISM_GENAI_HACKATHON_Y2026).
 - **Deck:** [`submission/Thapar_Trace_Submission_ppt.pptx`](submission/Thapar_Trace_Submission_ppt.pptx)
   ([PDF](submission/Thapar_Trace_Submission_ppt.pdf))
@@ -51,7 +51,7 @@ only if the scoreboard says so.
 ```bash
 pip install -r requirements.txt        # numpy + rank-bm25
 pip install -e .
-python -m pytest -q                    # 77 tests, all offline
+python -m pytest -q                    # 78 tests, all offline
 python -m prism.cli demo --backend hashing
 python -m prism.cli demo --backend hashing --versioned
 python -m prism.cli ablation --backend hashing
@@ -65,10 +65,10 @@ CI, and graceful degradation. It is **not** the competition model — it exists 
 
 ```bash
 pip install -r requirements.txt -r requirements-eval.txt && pip install -e .
-python -m prism.cli demo --config config/mpnet_512.json
-python -m prism.cli demo --config config/mpnet_512.json \
+python -m prism.cli demo --config config/e5_base.json
+python -m prism.cli demo --config config/e5_base.json \
     --query "given a list of meeting times, collapse the ones that overlap"
-python -m prism.cli demo --config config/mpnet_512.json --versioned   # P1 + evolutionary bonus
+python -m prism.cli demo --config config/e5_base.json --versioned   # P1 + evolutionary bonus
 ```
 
 `--query` takes any natural-language query (repeatable) and prints the ranked
@@ -82,25 +82,26 @@ and prints a `WARNING` saying so.
 pip install -r requirements.txt -r requirements-eval.txt   # + mteb, sentence-transformers, torch(CPU)
 pip install -e .
 
-python -m prism.cli eval --config config/mpnet_512.json \
+python -m prism.cli eval --config config/e5_base.json \
     --output results/appsretrieval_results.json
 ```
 
 `results/appsretrieval_results.json` is the leaderboard artifact — the raw MTEB
 `task_result.to_dict()`, exactly as the problem statement's reference snippet
-writes it. `make eval` runs the same command (about 2.5 h on a free Kaggle CPU).
+writes it. `make eval` runs the same command (about 1.5 h on a free Kaggle CPU).
 
-**What's submitted: `config/mpnet_512.json` — NDCG@10 = 0.0861, MRR@10 = 0.0733**
-on the real CoIR AppsRetrieval test split. It's
-`sentence-transformers/all-mpnet-base-v2` (110M params) with a 512-token input
-window, CPU-only, with none of the pre/post differentiators switched on.
+**What's submitted: `config/e5_base.json` — NDCG@10 = 0.1151, MRR@10 = 0.0986**
+on the real CoIR AppsRetrieval test split. It's `intfloat/e5-base-v2` (110M
+params) with its `query:` / `passage:` prefixes and a 512-token input window,
+CPU-only, with none of the other pre/post differentiators switched on.
 
-We measured nine configs on the real split and kept one — see
+We measured ten configs on the real split and kept one — see
 `docs/ablation_log.md`:
 
 | Config | NDCG@10 | vs baseline |
 |---|---:|---:|
-| **mpnet, 512-token window (submitted)** | **0.0861** | **+30.1%** |
+| **e5-base-v2, query/passage prefixes (submitted)** | **0.1151** | **+73.9%** |
+| mpnet, 512-token window | 0.0861 | +30.1% |
 | mpnet, 384-token window | 0.0837 | +26.5% |
 | baseline — all-MiniLM-L6-v2 | 0.0662 | — |
 | + front-loaded keywords | 0.0646 | −2.4% |
@@ -110,12 +111,12 @@ We measured nine configs on the real split and kept one — see
 | `microsoft/unixcoder-base` | 0.0434 | −34.5% |
 | CodeSearchNet `st-codesearch-distilroberta-base` | 0.0333 | −50% |
 
-Both configs that beat baseline kept its training recipe (same
-sentence-transformers "all-*" family, same training mix) and only added
-capacity and a longer input window; stretching the window from 384 to 512
-tokens added another +2.9% on its own. Every swap toward a *specialized*
-model — retrieval-tuned, or pretrained on code — lost. On this benchmark, at this scale, capacity within a
-broad general-purpose recipe beat domain specialization. Every dropped config
+The winner, `e5-base-v2`, is the same size as mpnet and uses the same 512-token
+window and pre-processing; it's trained specifically for query → passage
+retrieval, and it beat mpnet by a third at no extra CPU cost. Bigger
+general-purpose models also beat the MiniLM baseline (and stretching mpnet's
+window from 384 to 512 tokens added +2.9% on its own), while every
+code-specialized model lost. Every dropped config
 stays in `config/` and can be re-run the same way, e.g.:
 
 ```bash
@@ -143,7 +144,7 @@ the offline backend on a load failure, since those aren't scoring anything.
 docker build -t prism-code-search .
 docker run --rm prism-code-search                     # offline: tests + demo
 docker run --rm -v "$PWD/results:/app/results" \      # leaderboard eval (needs network)
-    prism-code-search python -m prism.cli eval --config config/mpnet_512.json \
+    prism-code-search python -m prism.cli eval --config config/e5_base.json \
     --output results/appsretrieval_results.json
 ```
 
@@ -228,11 +229,11 @@ prism/
   eval/                 mteb_runner.py, synthetic_task.py (offline MTEB task)
   data.py               synthetic AppsRetrieval-like fixtures
   cli.py                prism-eval / prism-demo / prism-ablation
-config/                 mpnet_512.json (submitted), mpnet.json, baseline.json, submission.json, frontload.json,
+config/                 e5_base.json (submitted), mpnet_512.json, mpnet.json, baseline.json, submission.json, frontload.json,
                         retrieval_tuned.json, code_model.json, unixcoder.json,
                         multiview_trimmed.json — results in docs/ablation_log.md
 scripts/                thin CLI wrappers
-tests/                  77 tests, offline; MTEB integration auto-skips if absent
+tests/                  78 tests, offline; MTEB integration auto-skips if absent
 docs/                   architecture.md, submission_checklist.md, ablation_log.md
 submission/             the deck (PPTX + PDF)
 Dockerfile, Makefile, requirements*.txt
@@ -251,11 +252,10 @@ Dockerfile, Makefile, requirements*.txt
 
 - **None of the pre/post differentiators is in the submitted config.** HyDE,
   multi-view and keyword front-loading all lost to plain MiniLM on the real
-  split; they haven't yet been re-measured on top of mpnet, where they may
+  split; they haven't yet been re-measured on top of e5, where they may
   behave differently (see `docs/ablation_log.md`).
-- **The MiniLM → mpnet jump changes two things at once** — model size and
-  input window (384 vs 256 tokens) — so that +26.5% isn't split between them
-  yet. The 384 → 512 step, measured on its own, added +2.9%.
+- **Larger retrieval models are untested.** e5-base-v2 is 110M params; bigger
+  ones (e.g. e5-large) may score higher but cost roughly 3× the CPU time.
 - The evolutionary bonus is a measurable **prototype**. Its version-discrimination
   gain is realized with the semantic backend; on the lexical fallback it holds
   parity with naive. The cheap-rebuild P1 requirement is fully working.

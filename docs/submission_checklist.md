@@ -23,11 +23,11 @@
       commit — the tagged commit is what gets judged.
 - [ ] MTEB results JSON (`appsretrieval_results.json`) uploaded as a **release
       artifact**. Generate it with:
-      `python -m prism.cli eval --config config/mpnet_512.json --output results/appsretrieval_results.json`
+      `python -m prism.cli eval --config config/e5_base.json --output results/appsretrieval_results.json`
       *(needs network for the model + CoIR dataset; run in an environment with
-      HuggingFace access — ~2.5 h on a free Kaggle CPU.)* **Use `config/mpnet_512.json`**
-      — the real ablation (`docs/ablation_log.md`) measured nine configs; mpnet
-      with a 512-token window scored best (NDCG@10 0.0861 vs baseline 0.0662).
+      HuggingFace access — ~1.5 h on a free Kaggle CPU.)* **Use `config/e5_base.json`**
+      — the real ablation (`docs/ablation_log.md`) measured ten configs;
+      e5-base-v2 scored best (NDCG@10 0.1151 vs baseline 0.0662).
       The written file is verified to be exactly `task_result.to_dict()` (no
       wrapper) — matching the problem statement's own reference snippet
       byte-for-byte, so it parses however the screening pipeline expects.
@@ -46,22 +46,22 @@
 - Reproducible pipeline + MTEB wiring verified end-to-end (offline synthetic task
   + trec_eval-matching metrics), **and the submission file format independently
   verified against the problem statement's own reference snippet.**
-- Real leaderboard results, not just offline estimates: nine configs
+- Real leaderboard results, not just offline estimates: ten configs
   measured on the actual CoIR AppsRetrieval test split. Submitted:
-  `config/mpnet_512.json` (NDCG@10 = **0.0861**, MRR@10 = **0.0733**, +30.1%
+  `config/e5_base.json` (NDCG@10 = **0.1151**, MRR@10 = **0.0986**, +73.9%
   over the MiniLM baseline). Full record and reasoning in `docs/ablation_log.md`.
 - P1 cheap versioned rebuild (working) + evolutionary-retrieval prototype.
 - Operational telemetry (precision@k, recall, latency, index build/rebuild cost).
-- 77 offline tests; Docker image whose default run is tests + demo.
+- 78 offline tests; Docker image whose default run is tests + demo.
 
 ## Human still needs to
 1. Register / confirm registration on the Google Form.
-2. ~~Run the leaderboard eval~~ — done on Kaggle: mpnet-512 scored
-   NDCG@10=0.0861, MRR@10=0.0733. Rename Kaggle's
-   `mpnet512_appsretrieval_results.json` (8,188 bytes — not the `.debug.json`)
-   to `appsretrieval_results.json` and attach it to the release.
+2. ~~Run the leaderboard eval~~ — done on Kaggle: e5-base scored
+   NDCG@10=0.1151, MRR@10=0.0986. Rename Kaggle's
+   `e5_appsretrieval_results.json` (not the `.debug.json`) to
+   `appsretrieval_results.json` and attach it to the release.
 3. Record the ≤5-min demo video; put its link and the deck (PPT + PDF) in the
    repo.
 4. Re-create the release tag `PRISM_GENAI_HACKATHON_Y2026` on that final
-   commit (the current tag predates the deck, the video link and mpnet-512).
+   commit (the current tag predates the deck, the video link and e5-base).
 5. Submit via the Google Form.
