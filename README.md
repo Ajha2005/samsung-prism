@@ -6,13 +6,14 @@ is pure retrieval (no generation) and is scored by
 [MTEB](https://github.com/embeddings-benchmark/mteb) on the CoIR
 `AppsRetrieval` test split via **NDCG@10** and **MRR**.
 
-The design bet: *win on a number, not a demo.* Every stage around the embedding
+The design bet: *let the real split decide.* Every stage around the embedding
 model is a switchable, measured layer, and a stage stays on only if it beats the
 baseline on the real split. Those measurements picked the submitted config:
 `intfloat/e5-base-v2` with its `query:` / `passage:` prefixes and a 512-token
-window, plus structure-preserving snippet cleanup and chunking of long snippets. HyDE, multi-view and dense+BM25 hybrid
-scoring (shown below) are built and switchable by config, but they lost on the
-real split, so they're off — see `docs/ablation_log.md`.
+window, plus structure-preserving snippet cleanup and chunking of long
+snippets. HyDE, multi-view and dense+BM25 hybrid scoring (shown below) are
+built and switchable by config, but they lost on the real split, so they're
+off — see `docs/ablation_log.md`.
 
 ```
         ┌───────────────────────────┐        ┌────────────────────────────┐
@@ -95,7 +96,9 @@ writes it. `make eval` runs the same command (about 1.5 h on a free Kaggle CPU).
 **What's submitted: `config/e5_base.json` — NDCG@10 = 0.1151, MRR@10 = 0.0986**
 on the real CoIR AppsRetrieval test split. It's `intfloat/e5-base-v2` (110M
 params) with its `query:` / `passage:` prefixes and a 512-token input window,
-CPU-only, with none of the other pre/post differentiators switched on.
+CPU-only, with none of the other pre/post differentiators switched on. The score
+matches the published CoIR result for e5-base-v2 on this task (11.5), an
+external check that the MTEB wiring and the prefixes are right.
 
 We measured ten configs on the real split and kept one — see
 `docs/ablation_log.md`:
@@ -118,8 +121,9 @@ window and pre-processing; it's trained specifically for query → passage
 retrieval, and it beat mpnet by a third at no extra CPU cost. Bigger
 general-purpose models also beat the MiniLM baseline (and stretching mpnet's
 window from 384 to 512 tokens added +2.9% on its own), while every
-code-specialized model lost. Every dropped config
-stays in `config/` and can be re-run the same way, e.g.:
+code-specialized model lost. Every dropped model config stays in `config/` and
+re-runs the same way (the HyDE and multi-view rows re-run with
+`python -m prism.cli ablation --apps`), e.g.:
 
 ```bash
 python -m prism.cli eval --config config/baseline.json \
@@ -154,12 +158,13 @@ docker run --rm -v "$PWD/results:/app/results" \      # leaderboard eval (needs 
 
 ## The three differentiators
 
-Built in order of proven payoff; each is an A/B against the baseline, kept only
-if it wins on the scoreboard (`python -m prism.cli ablation`).
+Built in order of expected payoff; each is an A/B against the baseline, kept
+only if it wins on the scoreboard (`python -m prism.cli ablation`). On the real
+split HyDE and multi-view lost, so the submission runs with both off.
 
 1. **Query → code compilation (code-flavored HyDE).** NL queries and code live in
    different "languages." We compile the query into a short pseudo-code sketch
-   and embed code-against-code, closing the modality gap on behavioral queries.
+   and embed code-against-code, to close the modality gap on behavioral queries.
    The default sketcher is a **deterministic, LLM-free** template (safe at eval
    time; retrieval stays faster than generation); an offline LLM sketch cache can
    be plugged in without any LLM in the ranking loop.
@@ -244,8 +249,8 @@ Dockerfile, Makefile, requirements*.txt
 
 ## Design constraints (why it's built this way)
 
-- **CPU-only, small model.** Innovation is forced into representation and
-  pipeline design, not scale.
+- **CPU-only, small model.** Gains have to come from choosing and feeding a
+  small model well, not from scale.
 - **No LLM in the ranking loop.** Any LLM use is offline pre-processing; eval-time
   cost is a string build + an embed, never a generation call.
 - **Index rebuilds cheaply.** Versioned from the start (content-addressed cache),

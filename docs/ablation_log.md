@@ -174,7 +174,9 @@ side).
 | **e5-base** | **intfloat/e5-base-v2 + query/passage prefixes** | **0.1151** | **0.0986** | **+33.7%** | **+73.9%** | ✅ **kept — submitted** |
 
 **Reading it:** the biggest single jump in the log, at no extra size or CPU
-cost (this run took 84 min vs. ~146 min for mpnet-512). It refines the
+cost (this run took 84 min vs. ~146 min for mpnet-512). The score matches the
+published CoIR result for e5-base-v2 on APPS (11.5 NDCG@10), an external check
+that the MTEB wiring and the prefixes are right. It refines the
 "capacity beat specialization" reading above: at equal size and window, a
 model trained for asymmetric query → passage retrieval beat a
 sentence-similarity model by a third. "Retrieval-tuned" alone isn't the axis

@@ -2,8 +2,9 @@
 
 The system is judged by MTEB as an **encoder**: an object that maps queries and
 code snippets into a shared vector space where cosine similarity ranks relevance.
-All cleverness lives in the pre- and post-processing wrapped around a small,
-CPU-friendly embedding model.
+Every stage around a small, CPU-friendly embedding model is a switchable pre- or
+post-processing layer, and `docs/ablation_log.md` records which ones earned their
+place: on the real split the model choice did, HyDE and multi-view did not.
 
 ## Data flow
 
@@ -25,8 +26,10 @@ two implementations:
   sublinear TF, char n-grams). No network, no model. Powers offline tests/CI and
   is the graceful-degradation fallback if the model can't load.
 
-`build_backend(config)` selects one and falls back to hashing with a warning if
-the ST stack is unavailable — so a run never hard-fails on the environment.
+`build_backend(config)` selects one. For the demo and ablations it falls back to
+hashing with a warning if the model can't load; the leaderboard eval runs
+strict and raises instead, so a reported score always comes from the requested
+model.
 
 ### `encoder.py` — `PrePostPipelineEncoder`
 The heart. Two faces:
@@ -76,11 +79,12 @@ snippets) → normalize.
   delta_weight · delta)`, where `delta` embeds the lines distinctive to a version
   (classified against the group by a normalized key, embedded raw to keep
   identifier signal). `stable_core_and_delta` exposes the invariant/changed split.
+  Measured so far it ties naive retrieval, offline and on e5-base-v2.
 
 ### `telemetry/`
 - `metrics.py` — trec_eval-compatible NDCG@k / MRR / P@k / Recall@k / MAP, plus
-  `RunTelemetry` (latency, throughput, index cost) and a `Timer`. Verified to
-  match MTEB to 1e-4.
+  `RunTelemetry` (encode time, ranking latency and throughput, index cost) and a
+  `Timer`. Verified to match MTEB to 1e-4.
 
 ### `eval/`
 - `mteb_runner.py` — `run_apps_retrieval` (real leaderboard JSON) and `run_task`
