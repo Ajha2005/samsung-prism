@@ -15,20 +15,21 @@
 
 ## Offline illustration (deterministic `hashing` backend, bundled synthetic set)
 
-This validates the *harness and the direction of each lever*, not the final
-leaderboard magnitude (the lexical backend under-represents semantic gains).
+This validates the *harness*, not the verdicts: the lexical backend behaves
+nothing like the real model, and the real split reversed two of these rows.
 
 | Config | Signature | NDCG@10 | MRR@10 | ΔNDCG vs base | Verdict |
 |---|---|---:|---:|---:|:--:|
-| baseline | `model=all-MiniLM-L6-v2` | 0.7370 | 0.6870 | — | ✅ keep |
-| +multiview | `+ multiview` | 0.7784 | 0.7256 | +0.0414 | ✅ keep |
-| +hyde | `+ hyde@0.5` | 0.7433 | 0.6963 | +0.0062 | ✅ keep |
-| +hybrid_rrf | `+ hybrid:rrf` | 0.7345 | 0.6866 | −0.0026 | ↩︎ drop |
-| +all | `+ hyde@0.5, multiview, hybrid:rrf` | 0.7711 | 0.7333 | +0.0340 | ✅ keep |
+| baseline | `model=all-MiniLM-L6-v2` | 0.7275 | 0.6755 | — | ✅ keep |
+| +multiview | `+ multiview` | 0.7587 | 0.7163 | +0.0312 | ✅ keep |
+| +hyde | `+ hyde@0.5` | 0.7568 | 0.7130 | +0.0293 | ✅ keep |
+| +hybrid_rrf | `+ hybrid:rrf` | 0.7336 | 0.6858 | +0.0061 | ✅ keep |
+| +all | `+ hyde@0.5, multiview, hybrid:rrf` | 0.7647 | 0.7264 | +0.0372 | ✅ keep |
 
-Reading it: multi-view is the strongest single lever here; HyDE helps modestly;
-hybrid dense+BM25 *hurt on this set* and is dropped — exactly the decision the
-methodology is meant to force. All decisions are remade on `AppsRetrieval`.
+Reading it: on this lexical set every lever helps — multi-view most, then HyDE,
+with hybrid dense+BM25 a small gain. On `AppsRetrieval` the two biggest
+reversed: multi-view and HyDE both lost to baseline (below), which is why every
+decision is made on the real split.
 
 ## Leaderboard results — real CoIR AppsRetrieval, `all-MiniLM-L6-v2`
 

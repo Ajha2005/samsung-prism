@@ -207,15 +207,14 @@ synthetic set — the real numbers come from `--apps`):
 
 | Config | NDCG@10 | ΔNDCG | Verdict |
 |---|---:|---:|:--:|
-| baseline | 0.7370 | — | keep |
-| +multiview | 0.7784 | +0.0414 | keep |
-| +hyde | 0.7433 | +0.0062 | keep |
-| +hybrid (rrf) | 0.7345 | −0.0026 | drop |
-| +all | 0.7711 | +0.0340 | keep |
+| baseline | 0.7275 | — | keep |
+| +multiview | 0.7587 | +0.0312 | keep |
+| +hyde | 0.7568 | +0.0293 | keep |
+| +hybrid (rrf) | 0.7336 | +0.0061 | keep |
+| +all | 0.7647 | +0.0372 | keep |
 
-(That `hybrid` row dropping is the methodology working as intended — measure,
-keep what wins, revert what doesn't. The real decision is remade on
-`AppsRetrieval`, and it reversed two of these: **on the real split, both
+(Offline, every lever wins. The real decision is remade on `AppsRetrieval`, and
+it reversed two of these: **on the real split, both
 `+multiview` and `+hyde` lose to baseline** — see `docs/ablation_log.md` for
 the real numbers and why. This offline table is kept here to show the harness
 working, not as a preview of the real verdict.)
